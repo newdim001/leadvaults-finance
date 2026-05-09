@@ -1,0 +1,30 @@
+# Virtual environment
+venv/
+.venv/
+
+# Database files
+*.db
+*.db.bak
+*.db.gz
+
+# Logs
+logs/
+
+# Backups
+backups/
+
+# WireGuard config (sensitive)
+wireguard/
+setup-wireguard.sh
+scripts/askpass.sh
+
+# OS files
+.DS_Store
+*.swp
+*.swo
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
