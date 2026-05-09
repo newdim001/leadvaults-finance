@@ -17,6 +17,7 @@ backups/
 wireguard/
 setup-wireguard.sh
 scripts/askpass.sh
+com.wireguard.*.plist
 
 # OS files
 .DS_Store

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.familyfinance.app</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/suren/family-finance/venv/bin/python</string>
+        <string>/Users/suren/family-finance/backend/main.py</string>
+    </array>
+    <key>WorkingDirectory</key>
+    <string>/Users/suren/family-finance</string>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>StandardOutPath</key>
+    <string>/Users/suren/family-finance/logs/app.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/suren/family-finance/logs/app.err</string>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+    </dict>
+</dict>
+</plist>
