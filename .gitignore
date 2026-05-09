@@ -1,34 +1,55 @@
-# Virtual environment
-venv/
-.venv/
+# Lead Vaults Finance — .gitignore
 
-# Database files
+# Database
+data/
 *.db
 *.db.bak
-*.db.gz
-
-# Logs
-logs/
+*.db-journal
+*.db-wal
 
 # Backups
 backups/
+*.db.gz
+*.db.gpg
+*.tar.gz
 
-# WireGuard config (sensitive)
-wireguard/
-setup-wireguard.sh
-scripts/askpass.sh
-com.wireguard.*.plist
+# Logs
+logs/
+*.log
+*.err
 
-# OS files
-.DS_Store
-*.swp
-*.swo
+# Uploads (receipts)
+uploads/*
 
-# Python cache
+# Python
 __pycache__/
 *.pyc
 *.pyo
+venv/
 *.egg-info/
 
-# Generated images (PWA icons are SVG, not PNG)
-icon-*.png
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment
+.env
+.env.local
+*.key
+
+# WireGuard (machine-specific)
+wireguard/
+scripts/
+*.plist
+setup-wireguard.sh
+
+# Temp
+write_*
+tmp/
+temp/
