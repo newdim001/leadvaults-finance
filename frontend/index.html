@@ -6,7 +6,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0a0c12">
-<title>Family Finance</title>
+<title>Lead Vaults Finance</title>
+<link rel="manifest" href="/manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
@@ -435,6 +436,16 @@ body {
 @media (max-width: 767px) {
   .sidebar { display: none; }
 }
+
+/* ─── TAG BADGE ─── */
+.tag-badge { font-size: 10px; color: var(--blue); background: var(--blue-bg); border-radius: 4px; padding: 1px 6px; margin-left: 6px; display: inline-block; }
+.filter-input { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; color: var(--text); font-size: 13px; font-family: inherit; min-width: 100px; }
+.filter-input:focus { outline: none; border-color: var(--blue); }
+.recurring-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+.recurring-item:last-child { border-bottom: none; }
+.portfolio-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+.portfolio-header { font-weight: 600; color: var(--text2); border-bottom: 2px solid var(--border); padding-bottom: 8px; margin-bottom: 4px; }
+
 </style>
 </head>
 <body>
@@ -503,6 +514,10 @@ body {
           <div class="section-header"><h3>Member Breakdown</h3></div>
           <div class="chart-card"><canvas id="memberChart"></canvas></div>
         </div>
+        <div class="section">
+          <div class="section-header"><h3>Net Worth</h3></div>
+          <div class="chart-card"><canvas id="netWorthChart"></canvas></div>
+        </div>
       </div>
 
       <!-- ADD -->
@@ -540,6 +555,10 @@ body {
               <label>Note <span style="color:var(--text3);font-weight:400">(optional)</span></label>
               <input type="text" id="txDescription" placeholder="What's this for?">
             </div>
+            <div class="form-group">
+              <label>Tags <span style="color:var(--text3);font-weight:400">(comma-separated)</span></label>
+              <input type="text" id="txTags" placeholder="e.g. vacation, tax-deductible">
+            </div>
             <div class="btn-group">
               <button type="submit" class="btn btn-primary" id="txSubmit">Save</button>
               <button type="button" class="btn btn-outline" onclick="resetForm()">Clear</button>
@@ -564,7 +583,11 @@ body {
             <option value="expense">Expense</option><option value="investment">Investment</option>
           </select>
           <select id="filterMember"><option value="">All</option></select>
-          <button class="btn btn-primary btn-sm fill-btn" onclick="loadTransactions()">🔍 Apply Filters</button>
+          <input type="text" id="filterTag" placeholder="Filter by tag..." class="filter-input">
+          <div style="display:flex;gap:6px;grid-column:1/-1;margin-top:4px">
+            <button class="btn btn-primary btn-sm" style="flex:1" onclick="loadTransactions()">🔍 Apply Filters</button>
+            <button class="btn btn-outline btn-sm" onclick="exportCSV()" title="Download CSV">📥 CSV</button>
+          </div>
         </div>
         <div class="tx-list" id="txList"></div>
         <div class="empty-state" id="txEmpty" style="display:none">
@@ -594,8 +617,12 @@ body {
         <div class="section">
           <div class="section-header"><h3>Investment Breakdown</h3></div>
           <div class="chart-card" id="investChartWrap"><canvas id="investPieChart"></canvas></div>
+        </div>
+        <div class="section" id="portfolioSection" style="display:none">
+          <div class="section-header"><h3>Investment Portfolio</h3></div>
+          <div id="portfolioTable" style="font-size:13px"></div>
+        </div>
       </div>
-    </div>
 
       <!-- SETTINGS -->
       <div class="page" id="page-settings">
@@ -619,6 +646,32 @@ body {
             <button class="btn btn-primary" onclick="changePassword()" style="margin-top:8px">Update Password</button>
             <div style="height:1px;background:var(--border);margin:20px 0"></div>
             <button class="btn btn-danger" onclick="logout()" style="margin-top:4px">🚪 Sign Out</button>
+            <div style="height:1px;background:var(--border);margin:20px 0"></div>
+            <h3 style="font-size:14px;color:var(--text2);font-weight:600;margin-bottom:12px">Recurring Transactions</h3>
+            <button class="btn btn-outline" onclick="toggleRecurring()" style="margin-bottom:12px">📅 Manage Recurring</button>
+            <div id="recurringPanel" style="display:none">
+              <div id="recurringList"></div>
+              <div id="recurringForm">
+                <div class="form-row">
+                  <div class="form-group"><label>Label</label><input type="text" id="recLabel" placeholder="e.g. Rent"></div>
+                  <div class="form-group"><label>Amount ($)</label><input type="number" step="0.01" min="0" id="recAmount" placeholder="0.00"></div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group"><label>Type</label><select id="recType"><option value="income">Income</option><option value="expense" selected>Expense</option><option value="investment">Investment</option></select></div>
+                  <div class="form-group"><label>Day of Month</label><input type="number" min="1" max="28" id="recDay" value="1"></div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group"><label>Category</label><select id="recCategory"></select></div>
+                  <div class="form-group"><label>Member</label><select id="recMember"></select></div>
+                </div>
+                <div class="form-group"><label>Description</label><input type="text" id="recDesc" placeholder="Optional note"></div>
+                <div class="form-group"><label>Tags <span style="color:var(--text3);font-weight:400">(comma-separated)</span></label><input type="text" id="recTags" placeholder="e.g. recurring, bills"></div>
+                <div class="btn-group">
+                  <button class="btn btn-primary btn-sm" onclick="saveRecurring()">➕ Add Template</button>
+                  <button class="btn btn-danger btn-sm" onclick="processRecurring()">⚡ Process Now</button>
+                </div>
+              </div>
+            </div>
             <p style="font-size:11px;color:var(--text3);text-align:center;margin-top:24px">Family Finance v2 • Data backed up nightly to Hetzner</p>
           </div>
         </div>
@@ -763,7 +816,7 @@ function resetForm() {
   $('txSubmit').textContent = 'Save';
   $('formTitle').textContent = 'New Transaction';
   $('txDate').value = new Date().toISOString().slice(0,10);
-  $('txAmount').value = ''; $('txDescription').value = '';
+  $('txAmount').value = ''; $('txDescription').value = ''; $('txTags').value = '';
   $('txType').value = 'expense';
   populateCategoryDropdown('expense');
 }
@@ -792,6 +845,7 @@ $('txForm').addEventListener('submit', async (e) => {
     date: $('txDate').value, amount: parseFloat($('txAmount').value),
     type: $('txType').value, category_id: parseInt($('txCategory').value),
     member_id: parseInt($('txMember').value), description: $('txDescription').value || null,
+    tags: $('txTags').value.trim() || null,
   };
   try {
     if (state.editingTxId) {
@@ -866,6 +920,7 @@ async function loadDashboard() {
         plugins: { legend: { labels: { color: '#8a90a8', font: {size:10}, boxWidth:12 } } }
       }
     });
+    loadNetWorthChart();
   } catch(e) { console.error(e); }
 }
 
@@ -879,10 +934,11 @@ function navMonth(dir) {
 // ─── TRANSACTIONS ───
 async function loadTransactions() {
   const y = $('filterYear').value, mo = $('filterMonth').value;
-  const t = $('filterType').value, mem = $('filterMember').value;
+  const t = $('filterType').value, mem = $('filterMember').value, tag = $('filterTag')?.value || '';
   let path = '/api/transactions?limit=200';
   if (y) path += `&year=${y}`; if (mo) path += `&month=${mo}`;
   if (t) path += `&type=${t}`; if (mem) path += `&member_id=${mem}`;
+  if (tag) path += `&tag=${encodeURIComponent(tag)}`;
   try {
     const txs = await api(path);
     const empty = $('txEmpty'); const hint = $('swipeHint');
@@ -901,6 +957,7 @@ async function loadTransactions() {
             <span>${tx.date}</span>
             <span>${tx.member_name}</span>
             ${tx.description ? `<span>${tx.description}</span>` : ''}
+            ${tx.tags ? `<span class="tag-badge">${tx.tags}</span>` : ''}
           </div>
         </div>
         <div class="tx-amount ${tx.type}">$${fmt(tx.amount)}</div>
@@ -929,7 +986,7 @@ async function editTx(id) {
     const tx = all.find(t => t.id === id);
     if (!tx) return toast('Not found', 'error');
     $('txDate').value = tx.date; $('txAmount').value = tx.amount;
-    $('txType').value = tx.type; $('txDescription').value = tx.description || '';
+    $('txType').value = tx.type; $('txDescription').value = tx.description || ''; $('txTags').value = tx.tags || '';
     state.editingTxId = tx.id;
     $('txSubmit').textContent = 'Update';
     $('formTitle').textContent = 'Edit Transaction';
@@ -1017,6 +1074,7 @@ async function loadReports() {
     } else {
       $('investChartWrap').innerHTML = '<h3 style="font-size:13px;color:var(--text2);font-weight:600;margin-bottom:12px">Investment Breakdown</h3><p style="text-align:center;padding:30px;color:var(--text3)">No investments this month</p>';
     }
+    loadPortfolio();
   } catch(e) { console.error(e); }
 }
 
@@ -1025,6 +1083,122 @@ function rptNav(dir) {
   if (state.rptMonth < 1) { state.rptMonth = 12; state.rptYear--; }
   if (state.rptMonth > 12) { state.rptMonth = 1; state.rptYear++; }
   loadReports();
+}
+
+// ─── CSV EXPORT ───
+function exportCSV() {
+  const y = $('filterYear').value, mo = $('filterMonth').value;
+  const t = $('filterType').value, tag = $('filterTag')?.value || '';
+  let params = {};
+  if (y) params.year = y; if (mo) params.month = mo;
+  if (t) params.type = t; if (tag) params.tag = tag;
+  window.location.href = '/api/transactions/export/csv?' + new URLSearchParams(params);
+}
+
+// ─── NET WORTH CHART ───
+async function loadNetWorthChart() {
+  try {
+    const data = await api('/api/reports/net-worth');
+    if (!data.length) return;
+    destroyChart('netWorth');
+    charts.netWorth = new Chart($('netWorthChart'), {
+      type: 'line',
+      data: {
+        labels: data.map(d => d.month.slice(5)),
+        datasets: [{
+          label: 'Net Worth',
+          data: data.map(d => d.net_worth),
+          borderColor: '#2dd46b',
+          backgroundColor: 'rgba(45,212,107,0.1)',
+          fill: true,
+          tension: 0.3,
+          pointRadius: 2,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: true,
+        scales: {
+          y: { grid: { color: 'rgba(255,255,255,.04)' }, ticks: { callback: v => '$'+fmt(v), font: {size:9} } },
+          x: { grid: { display: false }, ticks: { font: {size:9} } }
+        },
+        plugins: { legend: { display: false } }
+      }
+    });
+  } catch(e) { console.error(e); }
+}
+
+// ─── PORTFOLIO ───
+async function loadPortfolio() {
+  try {
+    const data = await api('/api/reports/portfolio');
+    if (!data || !data.length) { $('portfolioSection').style.display = 'none'; return; }
+    $('portfolioSection').style.display = 'block';
+    $('portfolioTable').innerHTML = `<div class="portfolio-row portfolio-header"><span>Category</span><span>Cost Basis</span><span>Allocation</span></div>` +
+      data.map(p => `<div class="portfolio-row"><span>${p.category}</span><span>$${fmt(p.cost_basis)}</span><span>${p.allocation_pct.toFixed(1)}%</span></div>`).join('');
+  } catch(e) { console.error(e); }
+}
+
+// ─── RECURRING TRANSACTIONS ───
+function toggleRecurring() {
+  const panel = $('recurringPanel');
+  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+  if (panel.style.display === 'block') loadRecurring();
+}
+
+async function loadRecurring() {
+  try {
+    const [templates, cats, members] = await Promise.all([
+      api('/api/recurring'),
+      api('/api/categories'),
+      api('/api/members')
+    ]);
+    $('recurringList').innerHTML = templates.length
+      ? templates.map(t => `<div class="recurring-item">
+          <div><strong>${t.label}</strong> — $${fmt(t.amount)} <span class="typetag ${t.type}">${t.type}</span> (day ${t.day_of_month})${t.tags ? ` <span class="tag-badge">${t.tags}</span>` : ''}</div>
+          <button class="btn btn-outline btn-sm" onclick="deleteRecurring(${t.id})" style="width:auto">🗑️</button>
+        </div>`).join('')
+      : '<p style="color:var(--text3);padding:12px 0">No recurring templates yet</p>';
+    $('recCategory').innerHTML = cats.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    $('recMember').innerHTML = members.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
+  } catch(e) { console.error(e); }
+}
+
+async function saveRecurring() {
+  const data = {
+    label: $('recLabel').value.trim(),
+    amount: parseFloat($('recAmount').value),
+    type: $('recType').value,
+    category_id: parseInt($('recCategory').value),
+    member_id: parseInt($('recMember').value),
+    description: $('recDesc').value.trim() || null,
+    tags: $('recTags').value.trim() || null,
+    day_of_month: parseInt($('recDay').value),
+  };
+  if (!data.label || !data.amount) return toast('Label and amount required', 'error');
+  try {
+    await api('/api/recurring', { method: 'POST', body: JSON.stringify(data) });
+    toast('Recurring template saved ✓');
+    $('recLabel').value = ''; $('recAmount').value = ''; $('recDesc').value = ''; $('recTags').value = '';
+    loadRecurring();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function deleteRecurring(id) {
+  if (!confirm('Delete this recurring template?')) return;
+  try {
+    await api(`/api/recurring/${id}`, { method: 'DELETE' });
+    toast('Deleted ✓');
+    loadRecurring();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function processRecurring() {
+  if (!confirm('Process recurring transactions now?')) return;
+  try {
+    const result = await api('/api/recurring/process', { method: 'POST' });
+    toast(`Created ${result.created || 0} transactions ✓`);
+    loadRecurring();
+  } catch(e) { toast(e.message, 'error'); }
 }
 
 // ─── DESKTOP SIDEBAR ───
@@ -1078,6 +1252,11 @@ function loadSettings() {
   $('settingsUser').value = state.user || '';
   $('settingsCurPass').value = '';
   $('settingsNewPass').value = '';
+  // Pre-populate recurring form dropdowns
+  Promise.all([api('/api/categories'), api('/api/members')]).then(([cats, members]) => {
+    $('recCategory').innerHTML = cats.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    $('recMember').innerHTML = members.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
+  }).catch(() => {});
 }
 
 async function changePassword() {
@@ -1120,6 +1299,11 @@ async function initApp() {
     showLogin();
   }
 })();
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js');
+}
 </script>
 </body>
 </html>

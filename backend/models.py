@@ -33,6 +33,25 @@ class Category(Base):
     transactions = relationship("Transaction", back_populates="category")
 
 
+class RecurringTemplate(Base):
+    __tablename__ = "recurring_templates"
+
+    id = Column(Integer, primary_key=True, index=True)
+    label = Column(String, nullable=False)
+    amount = Column(Float, nullable=False)
+    type = Column(String, nullable=False)  # income, expense, investment
+    category_id = Column(Integer, ForeignKey("categories.id"), nullable=False)
+    member_id = Column(Integer, ForeignKey("family_members.id"), nullable=False)
+    description = Column(String, nullable=True)
+    tags = Column(String, nullable=True)
+    day_of_month = Column(Integer, nullable=False, default=1)
+    active = Column(Integer, nullable=False, default=1)
+    created_at = Column(DateTime, server_default=func.now())
+
+    category = relationship("Category")
+    member = relationship("FamilyMember")
+
+
 class Transaction(Base):
     __tablename__ = "transactions"
 
@@ -41,6 +60,7 @@ class Transaction(Base):
     amount = Column(Float, nullable=False)
     type = Column(String, nullable=False)  # income, expense, investment
     description = Column(String, nullable=True)
+    tags = Column(String, nullable=True)
     category_id = Column(Integer, ForeignKey("categories.id"), nullable=False)
     member_id = Column(Integer, ForeignKey("family_members.id"), nullable=False)
     created_at = Column(DateTime, server_default=func.now())

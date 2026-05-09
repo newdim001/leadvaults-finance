@@ -29,3 +29,6 @@ __pycache__/
 *.pyc
 *.pyo
 *.egg-info/
+
+# Generated images (PWA icons are SVG, not PNG)
+icon-*.png
