@@ -12,1298 +12,1469 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <style>
-/* ─── RESET & BASE ─── */
-*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-:root {
-  --bg: #0a0c12;
-  --surface: #12151e;
-  --surface2: #1a1e2b;
-  --surface3: #242a3a;
-  --border: #262c3e;
-  --text: #e8ebf2;
-  --text2: #8a90a8;
-  --text3: #5c6278;
-  --green: #2dd46b;
-  --green-bg: rgba(45,212,107,.12);
-  --red: #ff4757;
-  --red-bg: rgba(255,71,87,.12);
-  --blue: #4d7cff;
-  --blue-bg: rgba(77,124,255,.12);
-  --amber: #ffb347;
-  --amber-bg: rgba(255,179,71,.12);
-  --purple: #a855f7;
-  --purple-bg: rgba(168,85,247,.12);
-  --radius-sm: 10px;
-  --radius: 16px;
-  --radius-lg: 20px;
-  --shadow: 0 2px 12px rgba(0,0,0,.3);
-  --shadow-lg: 0 8px 32px rgba(0,0,0,.4);
-  --nav-h: 62px;
-  --bottom-h: 64px;
-  --safe-bottom: env(safe-area-inset-bottom, 0px);
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+--bg:#0a0c12;--surface:#12151e;--surface2:#1a1e2b;--surface3:#242a3a;--border:#262c3e;
+--text:#e8ebf2;--text2:#8a90a8;--text3:#5c6278;
+--green:#2dd46b;--green-bg:rgba(45,212,107,.12);
+--red:#ff4757;--red-bg:rgba(255,71,87,.12);
+--blue:#4d7cff;--blue-bg:rgba(77,124,255,.12);
+--amber:#ffb347;--amber-bg:rgba(255,179,71,.12);
+--purple:#a855f7;--purple-bg:rgba(168,85,247,.12);
+--radius-sm:10px;--radius:16px;--radius-lg:20px;
+--shadow:0 2px 12px rgba(0,0,0,.3);--shadow-lg:0 8px 32px rgba(0,0,0,.4);
+--nav-h:62px;--bottom-h:64px;--safe-bottom:env(safe-area-inset-bottom,0px)}
+html,body{height:100%;overflow:hidden}
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
+#app{height:100%;display:flex;flex-direction:column}
+#loginScreen{position:fixed;inset:0;z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--bg);padding:32px 24px;transition:opacity .4s ease,transform .4s ease}
+#loginScreen.hidden{opacity:0;transform:scale(1.05);pointer-events:none}
+.login-logo{width:72px;height:72px;background:linear-gradient(135deg,var(--blue),var(--purple));border-radius:22px;display:flex;align-items:center;justify-content:center;font-size:32px;margin-bottom:24px;box-shadow:0 8px 32px rgba(77,124,255,.25)}
+.login-title{font-size:26px;font-weight:800;margin-bottom:4px}
+.login-sub{font-size:14px;color:var(--text2);margin-bottom:40px}
+.login-form{width:100%;max-width:340px}
+.login-form .field{margin-bottom:16px}
+.login-form .field label{display:block;font-size:12px;color:var(--text2);margin-bottom:6px;font-weight:500}
+.login-form .field input{width:100%;padding:14px 16px;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:16px;font-family:inherit;outline:none;transition:border-color .2s}
+.login-form .field input:focus{border-color:var(--blue)}
+.login-form .field input::placeholder{color:var(--text3)}
+.login-btn{width:100%;padding:15px;background:linear-gradient(135deg,var(--blue),#3b5fcc);border:none;border-radius:var(--radius-sm);color:#fff;font-size:16px;font-weight:600;cursor:pointer;font-family:inherit;transition:transform .15s,box-shadow .2s;margin-top:8px}
+.login-btn:active{transform:scale(.97)}
+.login-btn.loading{opacity:.7;pointer-events:none}
+.login-error{background:var(--red-bg);color:var(--red);padding:10px 14px;border-radius:var(--radius-sm);font-size:13px;text-align:center;margin-top:12px;display:none}
+.login-error.show{display:block}
+.login-toggle{text-align:center;margin-top:16px;font-size:13px;color:var(--text2)}
+.login-toggle a{color:var(--blue);cursor:pointer;text-decoration:none;font-weight:500}
+#mainScreen{display:none;flex:1;flex-direction:column;overflow:hidden}
+#mainScreen.active{display:flex}
+.app-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;padding-top:max(12px,env(safe-area-inset-top,12px));background:var(--bg);border-bottom:1px solid var(--border);flex-shrink:0}
+.app-header .left{display:flex;align-items:center;gap:10px}
+.app-header .logo{width:32px;height:32px;background:linear-gradient(135deg,var(--blue),var(--purple));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px}
+.app-header h1{font-size:17px;font-weight:700}
+.app-header .month-badge{font-size:12px;padding:4px 10px;background:var(--surface);border:1px solid var(--border);border-radius:100px;color:var(--text2);font-weight:500}
+.page-container{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.page{display:none;padding:16px;padding-bottom:calc(var(--bottom-h)+16px)}
+.page.active{display:block}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;z-index:100;display:flex;background:var(--surface);border-top:1px solid var(--border);padding-bottom:var(--safe-bottom);height:calc(var(--bottom-h)+var(--safe-bottom));flex-shrink:0}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;color:var(--text3);font-size:10px;font-weight:500;transition:color .2s;padding:6px 0;border:none;background:none;position:relative}
+.nav-item .icon{font-size:20px;transition:transform .2s}
+.nav-item .label{font-size:9px}
+.nav-item.active{color:var(--blue)}
+.nav-item.active .icon{transform:translateY(-1px) scale(1.1)}
+.nav-item.active::after{content:'';position:absolute;top:0;width:20px;height:2.5px;background:var(--blue);border-radius:0 0 4px 4px}
+.cards-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;transition:transform .15s}
+.card:active{transform:scale(.97)}
+.card .label{font-size:11px;color:var(--text2);font-weight:500;margin-bottom:4px}
+.card .value{font-size:24px;font-weight:800;letter-spacing:-.5px}
+.card .value.green{color:var(--green)}.card .value.red{color:var(--red)}.card .value.blue{color:var(--blue)}.card .value.amber{color:var(--amber)}
+.card .budget-bar{height:4px;border-radius:2px;background:var(--surface3);margin-top:8px;overflow:hidden}
+.card .budget-bar .fill{height:100%;border-radius:2px;transition:width .3s}
+.section{margin-bottom:16px}
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.section-header h3{font-size:15px;font-weight:600}
+.section-header .chip{font-size:11px;padding:4px 10px;background:var(--surface2);border-radius:100px;color:var(--text2)}
+.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px}
+.chart-card h3{font-size:13px;color:var(--text2);font-weight:600;margin-bottom:12px}
+.chart-card canvas{max-height:220px;width:100%!important}
+.month-nav{display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:16px}
+.month-nav button{width:38px;height:38px;border-radius:50%;background:var(--surface);border:1px solid var(--border);color:var(--text);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.month-nav button:active{background:var(--surface2);transform:scale(.92)}
+.month-nav .month-label{font-size:16px;font-weight:600;min-width:120px;text-align:center}
+.form-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 16px;margin-bottom:16px}
+.form-card h3{font-size:14px;color:var(--text2);font-weight:600;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+.form-group{margin-bottom:14px}
+.form-group:last-of-type{margin-bottom:0}
+.form-group label{display:block;font-size:12px;color:var(--text2);margin-bottom:5px;font-weight:500}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:13px 14px;background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:16px;font-family:inherit;outline:none;transition:border-color .2s;-webkit-appearance:none}
+.form-group textarea{resize:vertical;min-height:60px}
+.form-group select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%238a90a8' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--blue)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn{display:inline-flex;align-items:center;justify-content:center;padding:14px 24px;border:none;border-radius:var(--radius-sm);font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;transition:transform .15s,opacity .2s;min-height:48px;width:100%}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:linear-gradient(135deg,var(--blue),#3b5fcc);color:#fff}
+.btn-outline{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
+.btn-sm{padding:8px 14px;font-size:12px;min-height:34px;width:auto}
+.btn-danger{background:linear-gradient(135deg,var(--red),#cc3344);color:#fff}
+.btn-group{display:flex;gap:10px;margin-top:16px}
+.btn-group .btn{flex:1}
+.btn-icon{width:36px;height:36px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-size:16px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+.tx-list{display:flex;flex-direction:column;gap:8px}
+.tx-item{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;transition:transform .15s}
+.tx-item:active{transform:scale(.98)}
+.tx-icon{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.tx-icon.income{background:var(--green-bg)}
+.tx-icon.expense{background:var(--red-bg)}
+.tx-icon.investment{background:var(--purple-bg)}
+.tx-info{flex:1;min-width:0}
+.tx-info .top{display:flex;align-items:center;gap:6px;margin-bottom:2px}
+.tx-info .category{font-size:14px;font-weight:600}
+.tx-info .typetag{font-size:9px;padding:1px 7px;border-radius:100px;font-weight:600;text-transform:uppercase;letter-spacing:.3px}
+.tx-info .typetag.income{background:var(--green-bg);color:var(--green)}
+.tx-info .typetag.expense{background:var(--red-bg);color:var(--red)}
+.tx-info .typetag.investment{background:var(--purple-bg);color:var(--purple)}
+.tx-info .meta{font-size:11px;color:var(--text3);display:flex;gap:10px;flex-wrap:wrap}
+.tx-amount{font-size:16px;font-weight:700;text-align:right;white-space:nowrap}
+.tx-amount.income{color:var(--green)}
+.tx-amount.expense{color:var(--red)}
+.tx-amount.investment{color:var(--amber)}
+.tx-actions{display:flex;flex-direction:column;gap:4px;flex-shrink:0}
+.tx-actions button{width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.tx-actions button:active{background:var(--surface3)}
+.filter-bar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.filter-bar select,.filter-bar input{padding:10px 12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:13px;font-family:inherit;outline:none;-webkit-appearance:none;flex:1;min-width:100px}
+.filter-bar select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' fill='%238a90a8' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px}
+.toast{position:fixed;top:calc(env(safe-area-inset-top,0px)+16px);left:50%;transform:translateX(-50%) translateY(-100px);padding:12px 20px;border-radius:var(--radius-sm);font-size:14px;font-weight:500;z-index:300;transition:transform .3s cubic-bezier(.16,1,.3,1);pointer-events:none;white-space:nowrap;box-shadow:var(--shadow-lg)}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast.success{background:var(--green);color:#000}.toast.error{background:var(--red);color:#fff}
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;text-align:center}
+.empty-state .icon{font-size:48px;margin-bottom:12px;opacity:.6}
+.empty-state p{color:var(--text2);font-size:14px;line-height:1.5}
+.empty-state strong{color:var(--text)}
+.tag-badge{font-size:10px;color:var(--blue);background:var(--blue-bg);border-radius:4px;padding:1px 6px;margin-left:6px;display:inline-block}
+.swipe-hint{text-align:center;font-size:11px;color:var(--text3);padding:8px 0 16px}
+.settings-btn{width:34px;height:34px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--text2);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.settings-btn:active{background:var(--surface2);transform:scale(.92)}
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:150;display:none;align-items:center;justify-content:center;padding:24px}
+.modal-overlay.active{display:flex}
+.modal-content{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px;width:100%;max-width:480px;max-height:80vh;overflow-y:auto}
+.modal-content h3{font-size:16px;font-weight:600;margin-bottom:16px}
+/* Accounts */
+.acc-list{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.acc-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;display:flex;align-items:center;gap:12px;transition:transform .15s}
+.acc-card:active{transform:scale(.97)}
+.acc-icon{font-size:28px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;border-radius:12px;background:var(--surface2)}
+.acc-info{flex:1}
+.acc-info .name{font-size:14px;font-weight:600}
+.acc-info .type-badge{font-size:10px;padding:1px 6px;border-radius:4px;background:var(--blue-bg);color:var(--blue);display:inline-block;margin-top:2px}
+.acc-balance{font-size:17px;font-weight:700;text-align:right;white-space:nowrap}
+.acc-balance.positive{color:var(--green)}
+.acc-balance.negative{color:var(--red)}
+/* Budgets */
+.budget-cat{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
+.budget-cat:last-child{border-bottom:none}
+.budget-cat .bc-name{flex:1;font-size:13px;font-weight:500}
+.budget-cat .bc-input{width:90px}
+.budget-cat .bc-input input{width:100%;padding:6px 8px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;font-family:inherit;text-align:right}
+.budget-cat .bc-spent{font-size:12px;color:var(--text2);min-width:60px;text-align:right}
+.budget-cat .bc-bar{height:4px;border-radius:2px;background:var(--surface3);flex:1;min-width:40px;overflow:hidden}
+.budget-cat .bc-bar .fill{height:100%;border-radius:2px;transition:width .3s}
+/* Metals */
+.metal-list{display:grid;grid-template-columns:1fr;gap:10px}
+.metal-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px}
+.metal-top{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.metal-icon{font-size:28px}
+.metal-type-name{font-size:15px;font-weight:600}
+.metal-form-badge{font-size:10px;padding:2px 6px;border-radius:4px;background:var(--amber-bg);color:var(--amber)}
+.metal-details{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;font-size:12px;color:var(--text2);margin-bottom:8px}
+.metal-details span{display:block}
+.metal-actions{display:flex;gap:8px}
+.metal-actions button{padding:6px 12px;font-size:11px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer}
+/* Summary section */
+.summ-cards{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.summ-card{background:var(--surface2);border-radius:10px;padding:12px;text-align:center}
+.summ-card .sl{font-size:10px;color:var(--text3);margin-bottom:2px}
+.summ-card .sv{font-size:18px;font-weight:700}
+.summ-card .sv.green{color:var(--green)}
+.summ-card .sv.red{color:var(--red)}
+/* Groups */
+.metal-group{margin-bottom:16px}
+.metal-group-title{font-size:14px;font-weight:600;margin-bottom:8px;display:flex;gap:8px;align-items:center}
+.metal-group-title .gcount{font-size:11px;color:var(--text2)}
+/* Purity display */
+.purity-display{font-size:11px}
+.purity-display .kt{color:var(--amber);font-weight:600}
+/* Receipt preview */
+.receipt-preview{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.receipt-preview img{width:60px;height:60px;border-radius:8px;object-fit:cover;border:1px solid var(--border)}
+.receipt-preview .rp-item{position:relative}
+.receipt-preview .rp-del{position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--red);color:#fff;font-size:10px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.att-indicator{font-size:12px;cursor:pointer;color:var(--blue);background:var(--blue-bg);padding:1px 5px;border-radius:4px;margin-left:4px}
+/* Toolbar */
+.toolbar{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.toolbar .btn-sm{flex:none}
+/* Responsive */
+@media(min-width:768px){
+#mainScreen{flex-direction:row;align-items:stretch}
+.app-header{display:none}
+.bottom-nav{display:none}
+.page-container{flex:1;display:flex;justify-content:center;overflow-y:auto}
+.page{max-width:900px;width:100%;padding:32px}
+.cards-row{grid-template-columns:repeat(4,1fr)}
+.acc-list{grid-template-columns:repeat(3,1fr)}
+.metal-list{grid-template-columns:1fr 1fr}
+.summ-cards{grid-template-columns:repeat(4,1fr)}
+.sidebar{width:240px;background:var(--surface);border-right:1px solid var(--border);padding:24px 16px;flex-shrink:0;display:flex;flex-direction:column}
+.sidebar .logo-area{display:flex;align-items:center;gap:10px;margin-bottom:32px;padding:0 8px}
+.sidebar .logo-square{width:36px;height:36px;background:linear-gradient(135deg,var(--blue),var(--purple));border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.sidebar .logo-text{font-size:18px;font-weight:700}
+.sidebar .nav-item{flex:none;flex-direction:row;justify-content:flex-start;gap:10px;padding:10px 14px;border-radius:10px;font-size:13px;margin-bottom:2px}
+.sidebar .nav-item .icon{font-size:16px}
+.sidebar .nav-item:hover{background:var(--surface2)}
+.sidebar .nav-item.active{background:var(--blue-bg);color:var(--blue)}
+.sidebar .nav-item.active::after{display:none}
+.sidebar .user-badge{margin-top:auto;padding:12px 14px;background:var(--surface2);border-radius:10px;font-size:13px;display:flex;align-items:center;gap:8px}
+.sidebar .user-badge .avatar{width:28px;height:28px;border-radius:50%;background:var(--blue-bg);color:var(--blue);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700}
+.sidebar .user-badge .logout{margin-left:auto;font-size:11px;color:var(--text3);cursor:pointer;padding:4px 8px;border-radius:6px;border:none;background:none;font-family:inherit}
+.sidebar .user-badge .logout:hover{color:var(--red)}
 }
-html, body { height: 100%; overflow: hidden; }
-body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  -webkit-font-smoothing: antialiased;
-}
-
-/* ─── LOGIN SCREEN ─── */
-#app { height: 100%; display: flex; flex-direction: column; }
-#loginScreen {
-  position: fixed; inset: 0; z-index: 200;
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  background: var(--bg);
-  padding: 32px 24px;
-  transition: opacity .4s ease, transform .4s ease;
-}
-#loginScreen.hidden { opacity: 0; transform: scale(1.05); pointer-events: none; }
-.login-logo {
-  width: 72px; height: 72px;
-  background: linear-gradient(135deg, var(--blue), var(--purple));
-  border-radius: 22px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 32px;
-  margin-bottom: 24px;
-  box-shadow: 0 8px 32px rgba(77,124,255,.25);
-}
-.login-title { font-size: 26px; font-weight: 800; margin-bottom: 4px; }
-.login-sub { font-size: 14px; color: var(--text2); margin-bottom: 40px; }
-.login-form { width: 100%; max-width: 340px; }
-.login-form .field { margin-bottom: 16px; }
-.login-form .field label { display: block; font-size: 12px; color: var(--text2); margin-bottom: 6px; font-weight: 500; }
-.login-form .field input {
-  width: 100%; padding: 14px 16px;
-  background: var(--surface); border: 1.5px solid var(--border);
-  border-radius: var(--radius-sm); color: var(--text);
-  font-size: 16px; font-family: inherit; outline: none;
-  transition: border-color .2s;
-}
-.login-form .field input:focus { border-color: var(--blue); }
-.login-form .field input::placeholder { color: var(--text3); }
-.login-btn {
-  width: 100%; padding: 15px;
-  background: linear-gradient(135deg, var(--blue), #3b5fcc);
-  border: none; border-radius: var(--radius-sm);
-  color: #fff; font-size: 16px; font-weight: 600;
-  cursor: pointer; font-family: inherit;
-  transition: transform .15s, box-shadow .2s;
-  margin-top: 8px;
-}
-.login-btn:active { transform: scale(.97); }
-.login-btn.loading { opacity: .7; pointer-events: none; }
-.login-error {
-  background: var(--red-bg); color: var(--red);
-  padding: 10px 14px; border-radius: var(--radius-sm);
-  font-size: 13px; text-align: center; margin-top: 12px;
-  display: none;
-}
-.login-error.show { display: block; }
-
-/* ─── MAIN APP ─── */
-#mainScreen { display: none; flex: 1; flex-direction: column; overflow: hidden; }
-#mainScreen.active { display: flex; }
-
-/* Header */
-.app-header {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 12px 16px; padding-top: max(12px, env(safe-area-inset-top, 12px));
-  background: var(--bg); border-bottom: 1px solid var(--border); flex-shrink: 0;
-}
-.app-header .left { display: flex; align-items: center; gap: 10px; }
-.app-header .logo {
-  width: 32px; height: 32px;
-  background: linear-gradient(135deg, var(--blue), var(--purple));
-  border-radius: 8px; display: flex; align-items: center; justify-content: center;
-  font-size: 16px;
-}
-.app-header h1 { font-size: 17px; font-weight: 700; }
-.app-header .month-badge {
-  font-size: 12px; padding: 4px 10px;
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: 100px; color: var(--text2); font-weight: 500;
-}
-
-/* Page container */
-.page-container { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
-.page { display: none; padding: 16px; padding-bottom: calc(var(--bottom-h) + 16px); }
-.page.active { display: block; }
-
-/* ─── BOTTOM NAV ─── */
-.bottom-nav {
-  position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
-  display: flex; background: var(--surface);
-  border-top: 1px solid var(--border);
-  padding-bottom: var(--safe-bottom);
-  height: calc(var(--bottom-h) + var(--safe-bottom));
-  flex-shrink: 0;
-}
-.nav-item {
-  flex: 1; display: flex; flex-direction: column;
-  align-items: center; justify-content: center; gap: 2px;
-  cursor: pointer; color: var(--text3); font-size: 10px;
-  font-weight: 500; transition: color .2s;
-  padding: 6px 0; border: none; background: none;
-  position: relative;
-}
-.nav-item .icon { font-size: 22px; transition: transform .2s; }
-.nav-item .label { font-size: 10px; }
-.nav-item.active { color: var(--blue); }
-.nav-item.active .icon { transform: translateY(-1px) scale(1.1); }
-.nav-item.active::after {
-  content: ''; position: absolute; top: 0;
-  width: 24px; height: 2.5px;
-  background: var(--blue); border-radius: 0 0 4px 4px;
-}
-
-/* ─── CARDS ─── */
-.cards-row {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
-  margin-bottom: 16px;
-}
-.card {
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 16px;
-  transition: transform .15s;
-}
-.card:active { transform: scale(.97); }
-.card .label { font-size: 11px; color: var(--text2); font-weight: 500; margin-bottom: 4px; }
-.card .value { font-size: 24px; font-weight: 800; letter-spacing: -.5px; }
-.card .value.green { color: var(--green); }
-.card .value.red { color: var(--red); }
-.card .value.blue { color: var(--blue); }
-.card .value.amber { color: var(--amber); }
-
-/* ─── SECTION ─── */
-.section { margin-bottom: 16px; }
-.section-header {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 10px;
-}
-.section-header h3 { font-size: 15px; font-weight: 600; }
-.section-header .chip {
-  font-size: 11px; padding: 4px 10px;
-  background: var(--surface2); border-radius: 100px; color: var(--text2);
-}
-
-/* Chart containers */
-.chart-card {
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 16px;
-  margin-bottom: 12px;
-}
-.chart-card h3 { font-size: 13px; color: var(--text2); font-weight: 600; margin-bottom: 12px; }
-.chart-card canvas { max-height: 220px; width: 100% !important; }
-
-/* ─── MONTH PICKER ─── */
-.month-nav {
-  display: flex; align-items: center; justify-content: center; gap: 16px;
-  margin-bottom: 16px;
-}
-.month-nav button {
-  width: 38px; height: 38px; border-radius: 50%;
-  background: var(--surface); border: 1px solid var(--border);
-  color: var(--text); font-size: 14px;
-  cursor: pointer; display: flex; align-items: center; justify-content: center;
-  transition: all .15s;
-}
-.month-nav button:active { background: var(--surface2); transform: scale(.92); }
-.month-nav .month-label {
-  font-size: 16px; font-weight: 600; min-width: 120px; text-align: center;
-}
-
-/* ─── ADD FORM ─── */
-.form-card {
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 20px 16px; margin-bottom: 16px;
-}
-.form-card h3 {
-  font-size: 14px; color: var(--text2); font-weight: 600;
-  margin-bottom: 16px; padding-bottom: 12px;
-  border-bottom: 1px solid var(--border);
-}
-.form-group { margin-bottom: 14px; }
-.form-group:last-of-type { margin-bottom: 0; }
-.form-group label {
-  display: block; font-size: 12px; color: var(--text2);
-  margin-bottom: 5px; font-weight: 500;
-}
-.form-group input, .form-group select {
-  width: 100%; padding: 13px 14px;
-  background: var(--surface2); border: 1.5px solid var(--border);
-  border-radius: var(--radius-sm); color: var(--text);
-  font-size: 16px; font-family: inherit; outline: none;
-  transition: border-color .2s; -webkit-appearance: none;
-}
-.form-group select {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%238a90a8' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");
-  background-repeat: no-repeat; background-position: right 14px center;
-  padding-right: 36px;
-}
-.form-group input:focus, .form-group select:focus { border-color: var(--blue); }
-.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.btn {
-  display: inline-flex; align-items: center; justify-content: center;
-  padding: 14px 24px; border: none; border-radius: var(--radius-sm);
-  font-size: 15px; font-weight: 600; cursor: pointer;
-  font-family: inherit; transition: transform .15s, opacity .2s;
-  min-height: 48px; width: 100%;
-}
-.btn:active { transform: scale(.97); }
-.btn-primary { background: linear-gradient(135deg, var(--blue), #3b5fcc); color: #fff; }
-.btn-outline { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
-.btn-sm { padding: 8px 14px; font-size: 12px; min-height: 34px; width: auto; }
-.btn-danger { background: linear-gradient(135deg, var(--red), #cc3344); color: #fff; }
-.btn-group { display: flex; gap: 10px; margin-top: 16px; }
-.btn-group .btn { flex: 1; }
-
-/* ─── TRANSACTION CARDS ─── */
-.tx-list { display: flex; flex-direction: column; gap: 8px; }
-.tx-item {
-  display: flex; align-items: center; gap: 12px;
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 12px 14px;
-  transition: transform .15s;
-}
-.tx-item:active { transform: scale(.98); }
-.tx-icon {
-  width: 40px; height: 40px; border-radius: 12px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 18px; flex-shrink: 0;
-}
-.tx-icon.income { background: var(--green-bg); }
-.tx-icon.expense { background: var(--red-bg); }
-.tx-icon.investment { background: var(--purple-bg); }
-.tx-info { flex: 1; min-width: 0; }
-.tx-info .top {
-  display: flex; align-items: center; gap: 6px; margin-bottom: 2px;
-}
-.tx-info .category { font-size: 14px; font-weight: 600; }
-.tx-info .typetag {
-  font-size: 9px; padding: 1px 7px; border-radius: 100px;
-  font-weight: 600; text-transform: uppercase; letter-spacing: .3px;
-}
-.tx-info .typetag.income { background: var(--green-bg); color: var(--green); }
-.tx-info .typetag.expense { background: var(--red-bg); color: var(--red); }
-.tx-info .typetag.investment { background: var(--purple-bg); color: var(--purple); }
-.tx-info .meta {
-  font-size: 12px; color: var(--text3);
-  display: flex; gap: 10px;
-}
-.tx-amount {
-  font-size: 16px; font-weight: 700; text-align: right; white-space: nowrap;
-}
-.tx-amount.income { color: var(--green); }
-.tx-amount.expense { color: var(--red); }
-.tx-amount.investment { color: var(--amber); }
-.tx-actions {
-  display: flex; flex-direction: column; gap: 4px; flex-shrink: 0;
-}
-.tx-actions button {
-  width: 30px; height: 30px; border-radius: 8px;
-  border: 1px solid var(--border); background: var(--surface2);
-  color: var(--text2); font-size: 13px; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-}
-.tx-actions button:active { background: var(--surface3); }
-
-/* ─── FILTERS ─── */
-.filter-bar {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
-  margin-bottom: 12px;
-}
-.filter-bar select {
-  padding: 10px 12px; background: var(--surface);
-  border: 1px solid var(--border); border-radius: var(--radius-sm);
-  color: var(--text); font-size: 13px; font-family: inherit;
-  outline: none; -webkit-appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' fill='%238a90a8' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");
-  background-repeat: no-repeat; background-position: right 10px center;
-  padding-right: 28px;
-}
-.filter-bar .fill-btn {
-  grid-column: 1 / -1; margin-top: 4px;
-}
-
-/* ─── FEEDBACK ─── */
-.toast {
-  position: fixed; top: calc(env(safe-area-inset-top, 0px) + 16px);
-  left: 50%; transform: translateX(-50%) translateY(-100px);
-  padding: 12px 20px; border-radius: var(--radius-sm);
-  font-size: 14px; font-weight: 500; z-index: 300;
-  transition: transform .3s cubic-bezier(.16,1,.3,1);
-  pointer-events: none; white-space: nowrap;
-  box-shadow: var(--shadow-lg);
-}
-.toast.show { transform: translateX(-50%) translateY(0); }
-.toast.success { background: var(--green); color: #000; }
-.toast.error { background: var(--red); color: #fff; }
-
-/* ─── EMPTY STATE ─── */
-.empty-state {
-  display: flex; flex-direction: column; align-items: center;
-  justify-content: center; padding: 60px 20px; text-align: center;
-}
-.empty-state .icon { font-size: 48px; margin-bottom: 12px; opacity: .6; }
-.empty-state p { color: var(--text2); font-size: 14px; line-height: 1.5; }
-.empty-state strong { color: var(--text); }
-
-/* ─── LIST SWIPE HINT ─── */
-.swipe-hint {
-  text-align: center; font-size: 11px; color: var(--text3);
-  padding: 8px 0 16px;
-}
-
-/* Settings button */
-.settings-btn {
-  width: 34px; height: 34px; border-radius: 10px;
-  border: 1px solid var(--border); background: var(--surface);
-  color: var(--text2); font-size: 16px; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  transition: all .15s;
-}
-.settings-btn:active { background: var(--surface2); transform: scale(.92); }
-
-/* ─── RESPONSIVE (tablet+) ─── */
-@media (min-width: 768px) {
-  #mainScreen {
-    flex-direction: row;
-    align-items: stretch;
-  }
-  .app-header { display: none; }
-  .bottom-nav { display: none; }
-  .page-container { 
-    flex: 1; display: flex; justify-content: center;
-    overflow-y: auto;
-  }
-  .page { max-width: 800px; width: 100%; padding: 32px; }
-  .cards-row { grid-template-columns: repeat(4, 1fr); }
-  .filter-bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; }
-  .filter-bar select { min-width: 120px; }
-  .filter-bar .fill-btn { grid-column: auto; margin-top: 0; }
-  .form-row { grid-template-columns: 1fr 1fr; }
-  .tx-list { gap: 6px; }
-
-  /* Desktop sidebar */
-  .sidebar {
-    width: 240px; background: var(--surface);
-    border-right: 1px solid var(--border);
-    padding: 24px 16px; flex-shrink: 0;
-    display: flex; flex-direction: column;
-  }
-  .sidebar .logo-area {
-    display: flex; align-items: center; gap: 10px;
-    margin-bottom: 32px; padding: 0 8px;
-  }
-  .sidebar .logo-square {
-    width: 36px; height: 36px;
-    background: linear-gradient(135deg, var(--blue), var(--purple));
-    border-radius: 10px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 18px;
-  }
-  .sidebar .logo-text { font-size: 18px; font-weight: 700; }
-  .sidebar .nav-item {
-    flex: none; flex-direction: row; justify-content: flex-start;
-    gap: 12px; padding: 11px 14px; border-radius: 10px;
-    font-size: 14px; margin-bottom: 2px;
-  }
-  .sidebar .nav-item .icon { font-size: 18px; }
-  .sidebar .nav-item:hover { background: var(--surface2); }
-  .sidebar .nav-item.active { background: var(--blue-bg); color: var(--blue); }
-  .sidebar .nav-item.active::after { display: none; }
-  .sidebar .user-badge {
-    margin-top: auto; padding: 12px 14px;
-    background: var(--surface2); border-radius: 10px;
-    font-size: 13px; display: flex; align-items: center; gap: 8px;
-  }
-  .sidebar .user-badge .avatar {
-    width: 28px; height: 28px; border-radius: 50%;
-    background: var(--blue-bg); color: var(--blue);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 13px; font-weight: 700;
-  }
-  .sidebar .user-badge .logout {
-    margin-left: auto; font-size: 11px; color: var(--text3);
-    cursor: pointer; padding: 4px 8px; border-radius: 6px;
-    border: none; background: none; font-family: inherit;
-  }
-  .sidebar .user-badge .logout:hover { color: var(--red); }
-}
-@media (max-width: 767px) {
-  .sidebar { display: none; }
-}
-
-/* ─── TAG BADGE ─── */
-.tag-badge { font-size: 10px; color: var(--blue); background: var(--blue-bg); border-radius: 4px; padding: 1px 6px; margin-left: 6px; display: inline-block; }
-.filter-input { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; color: var(--text); font-size: 13px; font-family: inherit; min-width: 100px; }
-.filter-input:focus { outline: none; border-color: var(--blue); }
-.recurring-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
-.recurring-item:last-child { border-bottom: none; }
-.portfolio-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
-.portfolio-header { font-weight: 600; color: var(--text2); border-bottom: 2px solid var(--border); padding-bottom: 8px; margin-bottom: 4px; }
-
+@media(max-width:767px){.sidebar{display:none}}
 </style>
 </head>
 <body>
 <div id="app">
 
-  <!-- TOAST -->
-  <div class="toast" id="toast"></div>
+<div class="toast" id="toast"></div>
 
-  <!-- LOGIN SCREEN -->
-  <div id="loginScreen">
-    <div class="login-logo">💰</div>
-    <h2 class="login-title">Family Finance</h2>
-    <p class="login-sub">Track income, expenses &amp; investments</p>
-    <form class="login-form" id="loginForm" autocomplete="off">
-      <div class="field">
-        <label>Username</label>
-        <input type="text" id="loginUser" placeholder="Enter username" autocomplete="username" value="admin">
-      </div>
-      <div class="field">
-        <label>Password</label>
-        <input type="password" id="loginPass" placeholder="Enter password" autocomplete="current-password" value="admin123">
-      </div>
-      <button type="submit" class="login-btn" id="loginBtn">Sign In</button>
-      <div class="login-error" id="loginError"></div>
-    </form>
+<div id="loginScreen">
+  <div class="login-logo">💰</div>
+  <h2 class="login-title" id="loginTitle">Family Finance</h2>
+  <p class="login-sub" id="loginSub">Track income, expenses &amp; investments</p>
+  <form class="login-form" id="loginForm" autocomplete="off">
+    <div class="field">
+      <label id="loginUserLabel">Username</label>
+      <input type="text" id="loginUser" placeholder="Enter username" autocomplete="username" value="admin">
+    </div>
+    <div class="field">
+      <label id="loginPassLabel">Password</label>
+      <input type="password" id="loginPass" placeholder="Enter password" autocomplete="current-password" value="admin123">
+    </div>
+    <div class="field" id="loginConfirmField" style="display:none">
+      <label>Confirm Password</label>
+      <input type="password" id="loginConfirm" placeholder="Confirm password">
+    </div>
+    <button type="submit" class="login-btn" id="loginBtn">Sign In</button>
+    <div class="login-error" id="loginError"></div>
+    <div class="login-toggle" id="loginToggle">
+      <span id="loginToggleText">Don't have an account? <a id="loginToggleLink">Register</a></span>
+    </div>
+  </form>
+</div>
+
+<div id="mainScreen">
+
+  <nav class="sidebar" id="desktopSidebar"></nav>
+
+  <div class="app-header">
+    <div class="left">
+      <div class="logo">💰</div>
+      <h1>Finance</h1>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <span class="month-badge" id="headerMonth">May 2026</span>
+      <button class="settings-btn" onclick="selectTab('settings')" title="Settings">⚙️</button>
+    </div>
   </div>
 
-  <!-- MAIN SCREEN -->
-  <div id="mainScreen">
+  <div class="page-container" id="pageContainer">
 
-    <!-- Sidebar (desktop) -->
-    <nav class="sidebar" id="desktopSidebar"></nav>
-
-    <!-- Mobile header -->
-    <div class="app-header">
-      <div class="left">
-        <div class="logo">💰</div>
-        <h1>Finance</h1>
+    <!-- DASHBOARD -->
+    <div class="page active" id="page-dashboard">
+      <div class="month-nav">
+        <button onclick="navMonth(-1)">◀</button>
+        <span class="month-label" id="dashboardMonth"></span>
+        <button onclick="navMonth(1)">▶</button>
       </div>
-      <div style="display:flex;align-items:center;gap:8px">
-        <span class="month-badge" id="headerMonth">May 2026</span>
-        <button class="settings-btn" onclick="selectTab('settings')" title="Settings">⚙️</button>
+      <div class="cards-row" id="summaryCards"></div>
+      <div class="chart-card" id="budgetProgressCard" style="display:none">
+        <h3>💰 Budget Progress</h3>
+        <div id="budgetProgressContent"></div>
+      </div>
+      <div class="chart-card"><h3>📈 Balance Trend (12mo)</h3><canvas id="balanceChart"></canvas></div>
+      <div class="chart-card"><h3>📊 Net Worth</h3><canvas id="netWorthChart"></canvas></div>
+      <div class="chart-card"><h3>🧩 Expenses by Category</h3><canvas id="expensePieChart"></canvas></div>
+      <div class="chart-card"><h3>👥 Member Breakdown</h3><canvas id="memberChart"></canvas></div>
+    </div>
+
+    <!-- ADD TRANSACTION -->
+    <div class="page" id="page-add">
+      <h3 style="margin-bottom:16px">Add Transaction</h3>
+      <div class="form-card">
+        <div class="form-row">
+          <div class="form-group"><label>Type</label><select id="txType" onchange="updateTxForm()"><option value="income">Income</option><option value="expense">Expense</option><option value="investment">Investment</option></select></div>
+          <div class="form-group"><label>Date</label><input type="date" id="txDate"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Amount ($)</label><input type="number" step="0.01" id="txAmount" placeholder="0.00"></div>
+          <div class="form-group"><label>Category</label><select id="txCategory"></select></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Member</label><select id="txMember"></select></div>
+          <div class="form-group"><label>Account</label><select id="txAccount"><option value="">— None —</option></select></div>
+        </div>
+        <div class="form-group"><label>Description</label><input type="text" id="txDescription" placeholder="Optional description"></div>
+        <div class="form-group"><label>Tags <span style="color:var(--text3);font-weight:400">(comma-separated)</span></label><input type="text" id="txTags" placeholder="e.g. groceries, weekly"></div>
+        <div class="form-group"><label>📎 Receipts</label><input type="file" id="txReceipts" multiple accept="image/*,.pdf" style="padding:8px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);width:100%"></div>
+        <div class="receipt-preview" id="txReceiptPreview"></div>
+        <div class="btn-group"><button class="btn btn-primary" id="txSubmitBtn" onclick="saveTransaction()">Add Transaction</button></div>
+        <input type="hidden" id="txEditId" value="">
       </div>
     </div>
 
-    <!-- Pages -->
-    <div class="page-container" id="pageContainer">
+    <!-- HISTORY -->
+    <div class="page" id="page-history">
+      <h3 style="margin-bottom:12px">Transaction History</h3>
+      <div class="filter-bar">
+        <select id="histYear"></select>
+        <select id="histMonth"><option value="">All Months</option></select>
+        <select id="histType"><option value="">All Types</option><option value="income">Income</option><option value="expense">Expense</option><option value="investment">Investment</option></select>
+        <select id="histMember"><option value="">All Members</option></select>
+        <input type="text" id="histTag" placeholder="Filter by tag..." class="filter-input" style="flex:1;min-width:80px">
+        <button class="btn btn-sm btn-outline fill-btn" onclick="loadTransactions()" style="flex:none">🔍 Search</button>
+        <button class="btn btn-sm btn-outline" onclick="exportCSV()" style="flex:none">📥 CSV</button>
+      </div>
+      <div class="tx-list" id="txList"><div class="empty-state"><div class="icon">📋</div><p>No transactions yet</p></div></div>
+      <div class="swipe-hint">Tap a transaction to edit · Hold to delete</div>
+    </div>
 
-      <!-- DASHBOARD -->
-      <div class="page active" id="page-dashboard">
-        <div class="month-nav">
-          <button onclick="navMonth(-1)">◀</button>
-          <span class="month-label" id="dashMonthLabel">May 2026</span>
-          <button onclick="navMonth(1)">▶</button>
-        </div>
-        <div class="cards-row" id="dashCards"></div>
-        <div class="section">
-          <div class="section-header"><h3>Balance Trend</h3><span class="chip">12 months</span></div>
-          <div class="chart-card"><canvas id="balanceChart"></canvas></div>
-        </div>
-        <div class="section">
-          <div class="section-header"><h3>Expenses by Category</h3></div>
-          <div class="chart-card"><canvas id="categoryChart"></canvas></div>
-        </div>
-        <div class="section">
-          <div class="section-header"><h3>Member Breakdown</h3></div>
-          <div class="chart-card"><canvas id="memberChart"></canvas></div>
-        </div>
-        <div class="section">
-          <div class="section-header"><h3>Net Worth</h3></div>
-          <div class="chart-card"><canvas id="netWorthChart"></canvas></div>
+    <!-- REPORTS -->
+    <div class="page" id="page-reports">
+      <div class="section-header"><h3>📈 Reports</h3>
+        <div style="display:flex;gap:8px;align-items:center">
+          <select id="reportYear" style="padding:6px 10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px"></select>
+          <button class="btn btn-sm btn-outline" onclick="downloadPDF()">📄 PDF</button>
         </div>
       </div>
+      <div class="chart-card"><h3>📊 Income vs Expenses</h3><canvas id="monthlyChart"></canvas></div>
+      <div class="chart-card"><h3>🧩 Expense Breakdown</h3><canvas id="expenseChart"></canvas></div>
+      <div class="chart-card"><h3>📈 Investment Breakdown</h3><canvas id="investChart"></canvas></div>
+      <div class="chart-card" id="portfolioSection" style="display:none">
+        <h3>💼 Portfolio</h3>
+        <div id="portfolioTable" style="font-size:13px"></div>
+      </div>
+    </div>
 
-      <!-- ADD -->
-      <div class="page" id="page-add">
-        <div class="form-card">
-          <h3 id="formTitle">New Transaction</h3>
-          <form id="txForm" autocomplete="off">
+    <!-- ACCOUNTS -->
+    <div class="page" id="page-accounts">
+      <div class="section-header"><h3>🏦 Accounts</h3><button class="btn btn-sm btn-primary" onclick="showAddAccountModal()">+ Add</button></div>
+      <div class="acc-list" id="accountList"><div class="empty-state"><div class="icon">🏦</div><p>No accounts yet</p></div></div>
+    </div>
+
+    <!-- METALS -->
+    <div class="page" id="page-metals">
+      <div class="section-header"><h3>🏭 Metal Inventory</h3><button class="btn btn-sm btn-primary" onclick="showAddMetalModal()">+ Add Metal</button></div>
+      <div class="summ-cards" id="metalSummaryCards"></div>
+      <div id="metalList"><div class="empty-state"><div class="icon">🥇</div><p>No metals tracked yet. <strong>Start tracking your gold, silver, and other precious metals.</strong></p></div></div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="page" id="page-settings">
+      <h3 style="margin-bottom:16px">⚙️ Settings</h3>
+      <!-- Password -->
+      <div class="form-card">
+        <h3>Change Password</h3>
+        <div class="form-group"><label>Current Password</label><input type="password" id="setCurPass"></div>
+        <div class="form-group"><label>New Password</label><input type="password" id="setNewPass"></div>
+        <button class="btn btn-primary" onclick="changePassword()">Change Password</button>
+      </div>
+      <!-- Members -->
+      <div class="form-card">
+        <h3>Family Members</h3>
+        <div id="memberList" style="margin-bottom:12px"></div>
+        <div style="display:flex;gap:8px"><input type="text" id="newMemberName" placeholder="New member name" style="flex:1;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px"><button class="btn btn-sm btn-primary" onclick="addMember()">Add</button></div>
+      </div>
+      <!-- Categories -->
+      <div class="form-card">
+        <h3>Categories</h3>
+        <div id="catList" style="margin-bottom:12px"></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <select id="newCatType" style="padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px"><option value="income">Income</option><option value="expense">Expense</option><option value="investment">Investment</option></select>
+          <input type="text" id="newCatName" placeholder="Category name" style="flex:1;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px">
+          <button class="btn btn-sm btn-primary" onclick="addCategory()">Add</button>
+        </div>
+      </div>
+      <!-- Budgets -->
+      <div class="form-card">
+        <h3>💰 Budgets</h3>
+        <div style="display:flex;gap:8px;margin-bottom:12px">
+          <select id="budgetYear" style="padding:8px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px;flex:1"></select>
+          <select id="budgetMonth" style="padding:8px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px;flex:1">
+            <option value="1">Jan</option><option value="2">Feb</option><option value="3">Mar</option><option value="4">Apr</option>
+            <option value="5">May</option><option value="6">Jun</option><option value="7">Jul</option><option value="8">Aug</option>
+            <option value="9">Sep</option><option value="10">Oct</option><option value="11">Nov</option><option value="12">Dec</option>
+          </select>
+          <button class="btn btn-sm btn-outline" onclick="loadBudgets()">Load</button>
+        </div>
+        <div id="budgetList"></div>
+        <div style="margin-top:12px;display:flex;gap:8px">
+          <select id="budgetCat" style="flex:1;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px"></select>
+          <input type="number" id="budgetAmt" placeholder="Amount" style="width:90px;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px">
+          <button class="btn btn-sm btn-primary" onclick="saveBudget()">Set</button>
+        </div>
+      </div>
+      <!-- Recurring -->
+      <div class="form-card">
+        <h3>🔄 Recurring Templates</h3>
+        <div id="recurringPanel">
+          <div id="recurringList"></div>
+          <button class="btn btn-sm btn-outline" onclick="processRecurring()" style="margin-top:8px">▶ Process Due Now</button>
+          <div id="recurringForm" style="margin-top:12px;border-top:1px solid var(--border);padding-top:12px">
+            <h4 style="font-size:13px;color:var(--text2);margin-bottom:8px">Add Template</h4>
             <div class="form-row">
-              <div class="form-group">
-                <label>Date</label>
-                <input type="date" id="txDate" required>
-              </div>
-              <div class="form-group">
-                <label>Amount ($)</label>
-                <input type="number" step="0.01" min="0" id="txAmount" placeholder="0.00" inputmode="decimal" required>
-              </div>
+              <div class="form-group"><label>Label</label><input type="text" id="recLabel" placeholder="e.g. Monthly Salary"></div>
+              <div class="form-group"><label>Amount</label><input type="number" step="0.01" id="recAmount" placeholder="0.00"></div>
             </div>
-            <div class="form-group">
-              <label>Type</label>
-              <select id="txType" required>
-                <option value="income">💰 Income</option>
-                <option value="expense" selected>💸 Expense</option>
-                <option value="investment">📈 Investment</option>
-              </select>
+            <div class="form-row">
+              <div class="form-group"><label>Type</label><select id="recType"><option value="income">Income</option><option value="expense">Expense</option><option value="investment">Investment</option></select></div>
+              <div class="form-group"><label>Day of Month</label><input type="number" id="recDay" min="1" max="28" value="1"></div>
             </div>
-            <div class="form-group">
-              <label>Category</label>
-              <select id="txCategory" required></select>
+            <div class="form-row">
+              <div class="form-group"><label>Category</label><select id="recCat"></select></div>
+              <div class="form-group"><label>Member</label><select id="recMember"></select></div>
             </div>
-            <div class="form-group">
-              <label>For</label>
-              <select id="txMember" required></select>
-            </div>
-            <div class="form-group">
-              <label>Note <span style="color:var(--text3);font-weight:400">(optional)</span></label>
-              <input type="text" id="txDescription" placeholder="What's this for?">
-            </div>
-            <div class="form-group">
-              <label>Tags <span style="color:var(--text3);font-weight:400">(comma-separated)</span></label>
-              <input type="text" id="txTags" placeholder="e.g. vacation, tax-deductible">
-            </div>
-            <div class="btn-group">
-              <button type="submit" class="btn btn-primary" id="txSubmit">Save</button>
-              <button type="button" class="btn btn-outline" onclick="resetForm()">Clear</button>
-            </div>
-          </form>
-        </div>
-      </div>
-
-      <!-- TRANSACTIONS -->
-      <div class="page" id="page-transactions">
-        <div class="filter-bar">
-          <select id="filterYear"></select>
-          <select id="filterMonth">
-            <option value="">All</option><option value="1">Jan</option><option value="2">Feb</option>
-            <option value="3">Mar</option><option value="4">Apr</option><option value="5">May</option>
-            <option value="6">Jun</option><option value="7">Jul</option><option value="8">Aug</option>
-            <option value="9">Sep</option><option value="10">Oct</option><option value="11">Nov</option>
-            <option value="12">Dec</option>
-          </select>
-          <select id="filterType">
-            <option value="">All</option><option value="income">Income</option>
-            <option value="expense">Expense</option><option value="investment">Investment</option>
-          </select>
-          <select id="filterMember"><option value="">All</option></select>
-          <input type="text" id="filterTag" placeholder="Filter by tag..." class="filter-input">
-          <div style="display:flex;gap:6px;grid-column:1/-1;margin-top:4px">
-            <button class="btn btn-primary btn-sm" style="flex:1" onclick="loadTransactions()">🔍 Apply Filters</button>
-            <button class="btn btn-outline btn-sm" onclick="exportCSV()" title="Download CSV">📥 CSV</button>
-          </div>
-        </div>
-        <div class="tx-list" id="txList"></div>
-        <div class="empty-state" id="txEmpty" style="display:none">
-          <div class="icon">📭</div>
-          <p>No transactions yet</p>
-          <p style="margin-top:4px">Tap <strong>Add</strong> to get started</p>
-        </div>
-        <div class="swipe-hint" id="swipeHint">← Swipe items to delete</div>
-      </div>
-
-      <!-- REPORTS -->
-      <div class="page" id="page-reports">
-        <div class="month-nav">
-          <button onclick="rptNav(-1)">◀</button>
-          <span class="month-label" id="reportMonthLabel">May 2026</span>
-          <button onclick="rptNav(1)">▶</button>
-        </div>
-        <div class="cards-row" id="reportCards"></div>
-        <div class="section">
-          <div class="section-header"><h3>Income vs Expenses</h3><span class="chip">12 months</span></div>
-          <div class="chart-card"><canvas id="monthlyChart"></canvas></div>
-        </div>
-        <div class="section">
-          <div class="section-header"><h3>Expense Breakdown</h3></div>
-          <div class="chart-card"><canvas id="expensePieChart"></canvas></div>
-        </div>
-        <div class="section">
-          <div class="section-header"><h3>Investment Breakdown</h3></div>
-          <div class="chart-card" id="investChartWrap"><canvas id="investPieChart"></canvas></div>
-        </div>
-        <div class="section" id="portfolioSection" style="display:none">
-          <div class="section-header"><h3>Investment Portfolio</h3></div>
-          <div id="portfolioTable" style="font-size:13px"></div>
-        </div>
-      </div>
-
-      <!-- SETTINGS -->
-      <div class="page" id="page-settings">
-        <div style="margin-bottom:20px">
-          <h3 style="font-size:15px;font-weight:600;margin-bottom:16px">Account</h3>
-          <div class="form-card">
-            <div class="form-group">
-              <label>Username</label>
-              <input type="text" id="settingsUser" readonly style="opacity:.6;">
-            </div>
-            <div style="height:1px;background:var(--border);margin:16px 0"></div>
-            <h3 style="font-size:14px;color:var(--text2);font-weight:600;margin-bottom:12px">Change Password</h3>
-            <div class="form-group">
-              <label>Current Password</label>
-              <input type="password" id="settingsCurPass" placeholder="Enter current password">
-            </div>
-            <div class="form-group">
-              <label>New Password</label>
-              <input type="password" id="settingsNewPass" placeholder="Enter new password (min 4 chars)">
-            </div>
-            <button class="btn btn-primary" onclick="changePassword()" style="margin-top:8px">Update Password</button>
-            <div style="height:1px;background:var(--border);margin:20px 0"></div>
-            <button class="btn btn-danger" onclick="logout()" style="margin-top:4px">🚪 Sign Out</button>
-            <div style="height:1px;background:var(--border);margin:20px 0"></div>
-            <h3 style="font-size:14px;color:var(--text2);font-weight:600;margin-bottom:12px">Recurring Transactions</h3>
-            <button class="btn btn-outline" onclick="toggleRecurring()" style="margin-bottom:12px">📅 Manage Recurring</button>
-            <div id="recurringPanel" style="display:none">
-              <div id="recurringList"></div>
-              <div id="recurringForm">
-                <div class="form-row">
-                  <div class="form-group"><label>Label</label><input type="text" id="recLabel" placeholder="e.g. Rent"></div>
-                  <div class="form-group"><label>Amount ($)</label><input type="number" step="0.01" min="0" id="recAmount" placeholder="0.00"></div>
-                </div>
-                <div class="form-row">
-                  <div class="form-group"><label>Type</label><select id="recType"><option value="income">Income</option><option value="expense" selected>Expense</option><option value="investment">Investment</option></select></div>
-                  <div class="form-group"><label>Day of Month</label><input type="number" min="1" max="28" id="recDay" value="1"></div>
-                </div>
-                <div class="form-row">
-                  <div class="form-group"><label>Category</label><select id="recCategory"></select></div>
-                  <div class="form-group"><label>Member</label><select id="recMember"></select></div>
-                </div>
-                <div class="form-group"><label>Description</label><input type="text" id="recDesc" placeholder="Optional note"></div>
-                <div class="form-group"><label>Tags <span style="color:var(--text3);font-weight:400">(comma-separated)</span></label><input type="text" id="recTags" placeholder="e.g. recurring, bills"></div>
-                <div class="btn-group">
-                  <button class="btn btn-primary btn-sm" onclick="saveRecurring()">➕ Add Template</button>
-                  <button class="btn btn-danger btn-sm" onclick="processRecurring()">⚡ Process Now</button>
-                </div>
-              </div>
-            </div>
-            <p style="font-size:11px;color:var(--text3);text-align:center;margin-top:24px">Family Finance v2 • Data backed up nightly to Hetzner</p>
+            <div class="form-group"><label>Tags <span style="color:var(--text3);font-weight:400">(comma-separated)</span></label><input type="text" id="recTags" placeholder="e.g. recurring, bills"></div>
+            <button class="btn btn-primary btn-sm" onclick="saveRecurring()">Add Template</button>
           </div>
         </div>
       </div>
+    </div>
 
   </div>
 
-    <!-- Bottom nav (mobile) -->
-    <nav class="bottom-nav">
-      <button class="nav-item active" data-page="dashboard"><span class="icon">📊</span><span class="label">Home</span></button>
-      <button class="nav-item" data-page="add"><span class="icon">➕</span><span class="label">Add</span></button>
-      <button class="nav-item" data-page="transactions"><span class="icon">📋</span><span class="label">History</span></button>
-      <button class="nav-item" data-page="reports"><span class="icon">📈</span><span class="label">Reports</span></button>
-    </nav>
+  <!-- Bottom Nav (mobile) -->
+  <nav class="bottom-nav" id="bottomNav"></nav>
+
+</div>
+
+<!-- Modals -->
+<div class="modal-overlay" id="addAccountModal">
+  <div class="modal-content">
+    <h3>Add Account</h3>
+    <div class="form-group"><label>Account Name</label><input type="text" id="accName" placeholder="e.g. Main Checking"></div>
+    <div class="form-group"><label>Type</label><select id="accType"><option value="bank">🏦 Bank Account</option><option value="cash">💵 Cash</option><option value="credit_card">💳 Credit Card</option><option value="metal_vault">🥇 Metal Vault</option><option value="investment">📈 Investment</option></select></div>
+    <div class="form-group"><label>Icon (emoji)</label><input type="text" id="accIcon" placeholder="🏦" value="🏦"></div>
+    <div class="btn-group"><button class="btn btn-primary" onclick="saveAccount()">Save</button><button class="btn btn-outline" onclick="closeModal('addAccountModal')">Cancel</button></div>
   </div>
+</div>
+
+<div class="modal-overlay" id="addMetalModal">
+  <div class="modal-content">
+    <h3 id="metalModalTitle">Add Metal Holding</h3>
+    <input type="hidden" id="metalEditId" value="">
+    <div class="form-row">
+      <div class="form-group"><label>Metal Type</label><select id="metalType"><option value="gold">🥇 Gold</option><option value="silver">🥈 Silver</option><option value="platinum">🔘 Platinum</option><option value="palladium">🔘 Palladium</option><option value="copper">🪙 Copper</option></select></div>
+      <div class="form-group"><label>Form</label><select id="metalForm"><option value="bar">Bar</option><option value="coin">Coin</option><option value="jewelry">Jewelry</option><option value="scrap">Scrap</option></select></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Weight (grams)</label><input type="number" step="0.01" id="metalWeight" placeholder="e.g. 100"></div>
+      <div class="form-group"><label>Purity (0-1000)</label><input type="number" id="metalPurity" value="999" placeholder="999 = 24K"><div class="purity-display">= <span class="kt" id="metalPurityLabel">24K</span></div></div>
+    </div>
+    <div class="form-group"><label>Cost Basis ($)</label><input type="number" step="0.01" id="metalCost" placeholder="Total amount paid"></div>
+    <div class="form-row">
+      <div class="form-group"><label>Purchase Date</label><input type="date" id="metalDate"></div>
+      <div class="form-group"><label>Storage Location</label><input type="text" id="metalLocation" placeholder="e.g. Home safe"></div>
+    </div>
+    <div class="form-group"><label>Notes</label><textarea id="metalNotes" placeholder="Optional notes"></textarea></div>
+    <div class="btn-group">
+      <button class="btn btn-primary" id="metalSaveBtn" onclick="saveMetal()">Add Holding</button>
+      <button class="btn btn-outline" onclick="closeModal('addMetalModal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="attachmentViewer">
+  <div class="modal-content">
+    <h3>📎 Receipts</h3>
+    <div id="attachmentList"></div>
+    <div class="btn-group" style="margin-top:12px"><button class="btn btn-outline" onclick="closeModal('attachmentViewer')">Close</button></div>
+  </div>
+</div>
 
 </div>
 
 <script>
-// ─── STATE ───
-const state = {
-  user: null, token: null,
-  dashYear: new Date().getFullYear(),
-  dashMonth: new Date().getMonth() + 1,
-  rptYear: new Date().getFullYear(),
-  rptMonth: new Date().getMonth() + 1,
-  editingTxId: null,
-};
-let charts = {};
-const MONTHS = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-const API = window.location.origin;
+// ─── Helpers ───
+const $ = id => document.getElementById(id);
+const API = '/api';
+let currentMonth = new Date().getMonth() + 1;
+let currentYear = new Date().getFullYear();
+let chartInstances = {};
+let editingTxId = null;
 
-function $(id) { return document.getElementById(id); }
-function fmt(n) { return Number(n).toLocaleString(undefined, {minimumFractionDigits:0, maximumFractionDigits:0}); }
-
-// ─── AUTH ───
-function storeAuth(token, username) {
-  state.token = token; state.user = username;
-  localStorage.setItem('ff_token', token);
-  localStorage.setItem('ff_user', username);
-}
-
-function loadAuth() {
-  state.token = localStorage.getItem('ff_token');
-  state.user = localStorage.getItem('ff_user');
-}
-
-function clearAuth() {
-  state.token = null; state.user = null;
-  localStorage.removeItem('ff_token');
-  localStorage.removeItem('ff_user');
-}
-
-async function api(path, opts = {}) {
-  const headers = { 'Content-Type': 'application/json' };
-  if (state.token) headers['Authorization'] = `Bearer ${state.token}`;
-  const res = await fetch(`${API}${path}`, { headers, ...opts });
-  if (res.status === 401) {
-    clearAuth(); showLogin(); throw new Error('Session expired');
+function api(path, opts = {}) {
+  const token = localStorage.getItem('token');
+  const headers = opts.headers || {};
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  if (!opts.noJson && !(opts.body instanceof FormData)) {
+    headers['Content-Type'] = 'application/json';
   }
-  if (!res.ok) throw new Error((await res.json()).detail || res.statusText);
-  return res.json();
+  return fetch(API + path, { ...opts, headers })
+    .then(r => {
+      if (r.status === 401) { localStorage.removeItem('token'); showLogin(); throw new Error('Session expired'); }
+      const ct = r.headers.get('content-type') || '';
+      if (ct.includes('application/json')) return r.json();
+      return r;
+    });
 }
-
-// ─── TOAST ───
-let toastTimer;
 
 function toast(msg, type = 'success') {
-  const el = $('toast');
-  el.textContent = msg; el.className = `toast ${type}`;
-  clearTimeout(toastTimer);
-  requestAnimationFrame(() => el.classList.add('show'));
-  toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+  const t = $('toast');
+  t.textContent = msg; t.className = `toast ${type} show`;
+  setTimeout(() => t.classList.remove('show'), 2500);
 }
 
-// ─── LOGIN FLOW ───
+function fmt(n) {
+  if (n === null || n === undefined || isNaN(n)) return '$0.00';
+  return '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function closeModal(id) { $(id).classList.remove('active'); }
+
+function openModal(id) { $(id).classList.add('active'); }
+
+// ─── Login / Auth ───
+let isRegisterMode = false;
+
 function showLogin() {
   $('loginScreen').classList.remove('hidden');
   $('mainScreen').classList.remove('active');
 }
-function hideLogin() {
-  $('loginScreen').classList.add('hidden');
-  $('mainScreen').classList.add('active');
-}
 
-$('loginForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const btn = $('loginBtn'); const errEl = $('loginError');
-  btn.classList.add('loading'); btn.textContent = 'Signing in...';
-  errEl.classList.remove('show');
-  try {
-    const res = await api('/api/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ username: $('loginUser').value, password: $('loginPass').value }),
-    });
-    storeAuth(res.token, res.username);
-    state.user = res.username;
-    hideLogin();
-    initApp();
-  } catch (err) {
-    errEl.textContent = err.message; errEl.classList.add('show');
-  } finally {
-    btn.classList.remove('loading'); btn.textContent = 'Sign In';
+function toggleAuthMode() {
+  isRegisterMode = !isRegisterMode;
+  if (isRegisterMode) {
+    $('loginTitle').textContent = 'Create Account';
+    $('loginSub').textContent = 'Join Lead Vaults Finance';
+    $('loginBtn').textContent = 'Register';
+    $('loginConfirmField').style.display = 'block';
+    $('loginToggleText').innerHTML = 'Already have an account? <a id="loginToggleLink">Sign In</a>';
+  } else {
+    $('loginTitle').textContent = 'Family Finance';
+    $('loginSub').textContent = 'Track income, expenses &amp; investments';
+    $('loginBtn').textContent = 'Sign In';
+    $('loginConfirmField').style.display = 'none';
+    $('loginToggleText').innerHTML = 'Don\'t have an account? <a id="loginToggleLink">Register</a>';
   }
-});
-
-// ─── NAVIGATION ───
-function switchPage(name) {
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelector(`.nav-item[data-page="${name}"]`)?.classList.add('active');
-  $(`page-${name}`)?.classList.add('active');
-  if (window.innerWidth < 768) window.scrollTo({ top: 0, behavior: 'smooth' });
+  document.getElementById('loginToggleLink').addEventListener('click', toggleAuthMode);
 }
 
-document.querySelectorAll('.nav-item').forEach(el => {
-  el.addEventListener('click', () => {
-    const name = el.dataset.page;
-    switchPage(name);
-    if (name === 'dashboard') loadDashboard();
-    if (name === 'transactions') loadTransactions();
-    if (name === 'reports') loadReports();
-    if (name === 'add') populateForm();
-    if (name === 'settings') setTimeout(loadSettings, 100);
-  });
+$('loginForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const user = $('loginUser').value.trim();
+  const pass = $('loginPass').value;
+  if (!user || !pass) return;
+  if (isRegisterMode && pass !== $('loginConfirm').value) {
+    $('loginError').textContent = 'Passwords do not match';
+    $('loginError').classList.add('show');
+    return;
+  }
+  $('loginBtn').classList.add('loading');
+  $('loginError').classList.remove('show');
+  try {
+    const endpoint = isRegisterMode ? '/api/auth/register' : '/api/auth/login';
+    const res = await api(endpoint, { method: 'POST', body: JSON.stringify({ username: user, password: pass }) });
+    localStorage.setItem('token', res.token);
+    localStorage.setItem('username', res.username);
+    $('loginScreen').classList.add('hidden');
+    $('mainScreen').classList.add('active');
+    initApp();
+  } catch (e) {
+    $('loginError').textContent = e.message || 'Authentication failed';
+    $('loginError').classList.add('show');
+  }
+  $('loginBtn').classList.remove('loading');
 });
+
+// Initialize login toggle
+document.getElementById('loginToggleLink').addEventListener('click', toggleAuthMode);
+
+// Check auth on load
+(async function() {
+  const token = localStorage.getItem('token');
+  if (token) {
+    try {
+      const res = await api('/api/auth/check');
+      if (res.ok) {
+        $('loginScreen').classList.add('hidden');
+        $('mainScreen').classList.add('active');
+        initApp();
+        return;
+      }
+    } catch(e) {}
+  }
+  showLogin();
+})();
+
+// ─── Init ───
+async function initApp() {
+  await Promise.all([
+    populateYearSelect('histYear'),
+    populateYearSelect('reportYear'),
+    populateYearSelect('budgetYear'),
+    loadMembersForSelect(),
+    loadAccountsForSelect(),
+    buildNav(),
+    populateTxForm(),
+  ]);
+  setDateDefaults();
+  selectTab('dashboard');
+}
+
+function buildNav() {
+  const pages = [
+    { name: 'dashboard', icon: '📊', label: 'Home' },
+    { name: 'add', icon: '➕', label: 'Add' },
+    { name: 'history', icon: '📋', label: 'History' },
+    { name: 'reports', icon: '📈', label: 'Reports' },
+    { name: 'accounts', icon: '🏦', label: 'Accounts' },
+    { name: 'metals', icon: '🥇', label: 'Metals' },
+    { name: 'settings', icon: '⚙️', label: 'Settings' },
+  ];
+  // Bottom nav
+  $('bottomNav').innerHTML = pages.map(p =>
+    `<button class="nav-item${p.name==='dashboard'?' active':''}" data-page="${p.name}">
+      <span class="icon">${p.icon}</span><span class="label">${p.label}</span>
+    </button>`
+  ).join('');
+  $('bottomNav').querySelectorAll('.nav-item').forEach(el => {
+    el.addEventListener('click', () => selectTab(el.dataset.page));
+  });
+  // Sidebar
+  $('desktopSidebar').innerHTML = `
+    <div class="logo-area"><div class="logo-square">💰</div><span class="logo-text">Lead Vaults</span></div>
+    ${pages.map(p => `<button class="nav-item${p.name==='dashboard'?' active':''}" data-page="${p.name}">
+      <span class="icon">${p.icon}</span><span>${p.label}</span>
+    </button>`).join('')}
+    <div class="user-badge">
+      <div class="avatar">${(localStorage.getItem('username') || 'U')[0].toUpperCase()}</div>
+      <span>${localStorage.getItem('username') || 'User'}</span>
+      <button class="logout" onclick="logout()">Logout</button>
+    </div>
+  `;
+  $('desktopSidebar').querySelectorAll('.nav-item').forEach(el => {
+    el.addEventListener('click', () => selectTab(el.dataset.page));
+  });
+}
+
+function logout() {
+  localStorage.removeItem('token');
+  localStorage.removeItem('username');
+  showLogin();
+}
 
 function selectTab(name) {
-  switchPage(name);
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll(`[data-page="${name}"]`).forEach(n => n.classList.add('active'));
+  const page = $(`page-${name}`);
+  if (page) page.classList.add('active');
   if (name === 'dashboard') loadDashboard();
-  if (name === 'transactions') loadTransactions();
-  if (name === 'reports') loadReports();
-  if (name === 'add') populateForm();
-  if (name === 'settings') setTimeout(loadSettings, 100);
+  else if (name === 'history') { populateHistFilters(); loadTransactions(); }
+  else if (name === 'reports') initReports();
+  else if (name === 'settings') loadSettings();
+  else if (name === 'accounts') loadAccounts();
+  else if (name === 'metals') loadMetals();
+  else if (name === 'add') populateTxForm();
 }
 
-// ─── HELPERS ───
-function destroyChart(key) { if (charts[key]) { charts[key].destroy(); delete charts[key]; } }
-
-function resetForm() {
-  state.editingTxId = null;
-  $('txSubmit').textContent = 'Save';
-  $('formTitle').textContent = 'New Transaction';
-  $('txDate').value = new Date().toISOString().slice(0,10);
-  $('txAmount').value = ''; $('txDescription').value = ''; $('txTags').value = '';
-  $('txType').value = 'expense';
-  populateCategoryDropdown('expense');
-}
-
-async function populateForm() {
-  try {
-    const [cats, members] = await Promise.all([api('/api/categories'), api('/api/members')]);
-    $('txCategory').innerHTML = cats.filter(c => c.type === ($('txType').value || 'expense'))
-      .map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-    $('txMember').innerHTML = members.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
-  } catch (e) { console.error(e); }
-}
-
-$('txType').addEventListener('change', () => populateCategoryDropdown($('txType').value));
-
-async function populateCategoryDropdown(type) {
-  try {
-    const cats = await api(`/api/categories?type=${type}`);
-    $('txCategory').innerHTML = cats.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-  } catch (e) { console.error(e); }
-}
-
-$('txForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const data = {
-    date: $('txDate').value, amount: parseFloat($('txAmount').value),
-    type: $('txType').value, category_id: parseInt($('txCategory').value),
-    member_id: parseInt($('txMember').value), description: $('txDescription').value || null,
-    tags: $('txTags').value.trim() || null,
-  };
-  try {
-    if (state.editingTxId) {
-      await api(`/api/transactions/${state.editingTxId}`, { method: 'PUT', body: JSON.stringify(data) });
-      toast('Updated ✓');
-    } else {
-      await api('/api/transactions', { method: 'POST', body: JSON.stringify(data) });
-      toast('Saved ✓');
-    }
-    resetForm();
-    if (navigator.vibrate) navigator.vibrate(8);
-  } catch (e) { toast(e.message, 'error'); }
-});
-
-// ─── DASHBOARD ───
-async function loadDashboard() {
-  const y = state.dashYear, m = state.dashMonth;
-  const label = `${MONTHS[m]} ${y}`;
-  $('dashMonthLabel').textContent = label;
-  $('headerMonth').textContent = label;
-  try {
-    const s = await api(`/api/reports/summary?year=${y}&month=${m}`);
-    $('dashCards').innerHTML = `
-      <div class="card"><div class="label">Income</div><div class="value green">$${fmt(s.income)}</div></div>
-      <div class="card"><div class="label">Expenses</div><div class="value red">$${fmt(s.expense)}</div></div>
-      <div class="card"><div class="label">Investments</div><div class="value amber">$${fmt(s.investment)}</div></div>
-      <div class="card"><div class="label">Net Savings</div><div class="value ${s.net>=0?'green':'red'}">$${fmt(s.net)}</div></div>`;
-
-    const bal = await api('/api/reports/balance-over-time?months=12');
-    destroyChart('balance');
-    charts.balance = new Chart($('balanceChart'), {
-      type: 'line', data: {
-        labels: bal.map(d => d.month.slice(5)),
-        datasets: [{ label: 'Balance', data: bal.map(d => d.balance),
-          borderColor: '#4d7cff', backgroundColor: 'rgba(77,124,255,.08)',
-          fill: true, tension: .4, pointRadius: 2, borderWidth: 2 }]
-      }, options: {
-        responsive: true, maintainAspectRatio: true,
-        plugins: { legend: { display: false } },
-        scales: { y: { grid: { color: 'rgba(255,255,255,.04)' }, ticks: { callback: v => '$'+fmt(v), font: {size:9} } },
-                 x: { grid: { display: false }, ticks: { font: {size:9} } } }
-      }
-    });
-
-    const cat = await api(`/api/reports/category-breakdown?year=${y}&month=${m}&type=expense`);
-    destroyChart('category');
-    const clrs = ['#ff4757','#ffb347','#4d7cff','#a855f7','#2dd46b','#ec4899','#14b8a6'];
-    charts.category = new Chart($('categoryChart'), {
-      type: 'doughnut', data: {
-        labels: cat.map(c => c.category),
-        datasets: [{ data: cat.map(c => c.amount), backgroundColor: clrs }]
-      }, options: {
-        responsive: true, maintainAspectRatio: true,
-        plugins: { legend: { position: 'bottom', labels: { color: '#8a90a8', font: {size:10}, boxWidth:12, padding:8 } } }
-      }
-    });
-
-    const mem = await api(`/api/reports/member-breakdown?year=${y}&month=${m}`);
-    destroyChart('member');
-    charts.member = new Chart($('memberChart'), {
-      type: 'bar', data: {
-        labels: mem.map(m => m.member),
-        datasets: [
-          { label: 'Income', data: mem.map(m => m.income), backgroundColor: '#2dd46b', borderRadius: 4 },
-          { label: 'Expense', data: mem.map(m => m.expense), backgroundColor: '#ff4757', borderRadius: 4 },
-          { label: 'Investment', data: mem.map(m => m.investment), backgroundColor: '#ffb347', borderRadius: 4 },
-        ]
-      }, options: {
-        responsive: true, maintainAspectRatio: true,
-        scales: { y: { grid: { color: 'rgba(255,255,255,.04)' }, beginAtZero: true, ticks: { callback: v => '$'+fmt(v), font: {size:9} } },
-                 x: { grid: { display: false }, ticks: { font: {size:10} } } },
-        plugins: { legend: { labels: { color: '#8a90a8', font: {size:10}, boxWidth:12 } } }
-      }
-    });
-    loadNetWorthChart();
-  } catch(e) { console.error(e); }
-}
-
-function navMonth(dir) {
-  state.dashMonth += dir;
-  if (state.dashMonth < 1) { state.dashMonth = 12; state.dashYear--; }
-  if (state.dashMonth > 12) { state.dashMonth = 1; state.dashYear++; }
-  loadDashboard();
-}
-
-// ─── TRANSACTIONS ───
-async function loadTransactions() {
-  const y = $('filterYear').value, mo = $('filterMonth').value;
-  const t = $('filterType').value, mem = $('filterMember').value, tag = $('filterTag')?.value || '';
-  let path = '/api/transactions?limit=200';
-  if (y) path += `&year=${y}`; if (mo) path += `&month=${mo}`;
-  if (t) path += `&type=${t}`; if (mem) path += `&member_id=${mem}`;
-  if (tag) path += `&tag=${encodeURIComponent(tag)}`;
-  try {
-    const txs = await api(path);
-    const empty = $('txEmpty'); const hint = $('swipeHint');
-    const icons = { income: '💰', expense: '💸', investment: '📈' };
-    if (txs.length === 0) { $('txList').innerHTML = ''; empty.style.display = 'block'; hint.style.display = 'none'; return; }
-    empty.style.display = 'none'; hint.style.display = 'block';
-    $('txList').innerHTML = txs.map(tx => `
-      <div class="tx-item" data-id="${tx.id}">
-        <div class="tx-icon ${tx.type}">${icons[tx.type]||'💳'}</div>
-        <div class="tx-info">
-          <div class="top">
-            <span class="category">${tx.category_name}</span>
-            <span class="typetag ${tx.type}">${tx.type}</span>
-          </div>
-          <div class="meta">
-            <span>${tx.date}</span>
-            <span>${tx.member_name}</span>
-            ${tx.description ? `<span>${tx.description}</span>` : ''}
-            ${tx.tags ? `<span class="tag-badge">${tx.tags}</span>` : ''}
-          </div>
-        </div>
-        <div class="tx-amount ${tx.type}">$${fmt(tx.amount)}</div>
-        <div class="tx-actions">
-          <button onclick="editTx(${tx.id})" title="Edit">✏️</button>
-          <button onclick="deleteTx(${tx.id})" title="Delete">🗑️</button>
-        </div>
-      </div>
-    `).join('');
-  } catch(e) { console.error(e); }
-}
-
-async function deleteTx(id) {
-  if (!confirm('Delete this transaction?')) return;
-  try {
-    await api(`/api/transactions/${id}`, { method: 'DELETE' });
-    loadTransactions();
-    toast('Deleted ✓');
-    if (navigator.vibrate) navigator.vibrate(8);
-  } catch(e) { toast(e.message, 'error'); }
-}
-
-async function editTx(id) {
-  try {
-    const all = await api('/api/transactions?limit=500');
-    const tx = all.find(t => t.id === id);
-    if (!tx) return toast('Not found', 'error');
-    $('txDate').value = tx.date; $('txAmount').value = tx.amount;
-    $('txType').value = tx.type; $('txDescription').value = tx.description || ''; $('txTags').value = tx.tags || '';
-    state.editingTxId = tx.id;
-    $('txSubmit').textContent = 'Update';
-    $('formTitle').textContent = 'Edit Transaction';
-    await populateCategoryDropdown(tx.type);
-    $('txCategory').value = tx.category_id;
-    const members = await api('/api/members');
-    $('txMember').innerHTML = members.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
-    $('txMember').value = tx.member_id;
-    selectTab('add');
-  } catch(e) { toast(e.message, 'error'); }
-}
-
-async function initFilters() {
+// ─── Populate helpers ───
+function populateYearSelect(id) {
+  const s = $(id); if (!s) return;
   const y = new Date().getFullYear();
-  const sel = $('filterYear');
-  for (let i = y-5; i <= y+1; i++) {
-    const opt = document.createElement('option'); opt.value = i; opt.textContent = i;
-    if (i === y) opt.selected = true; sel.appendChild(opt);
+  s.innerHTML = '';
+  for (let i = y; i >= y - 5; i--) {
+    const o = document.createElement('option');
+    o.value = i; o.textContent = i;
+    if (i === y) o.selected = true;
+    s.appendChild(o);
   }
-  $('filterMonth').value = new Date().getMonth() + 1;
+}
+
+async function loadMembersForSelect() {
   try {
     const members = await api('/api/members');
-    members.forEach(m => {
-      const opt = document.createElement('option'); opt.value = m.id; opt.textContent = m.name;
-      $('filterMember').appendChild(opt);
+    const selects = ['txMember', 'histMember', 'recMember'];
+    selects.forEach(id => {
+      const s = $(id); if (!s) return;
+      const val = s.value;
+      s.innerHTML = id === 'histMember' ? '<option value="">All Members</option>' : '';
+      members.forEach(m => {
+        const o = document.createElement('option');
+        o.value = m.id; o.textContent = m.name;
+        s.appendChild(o);
+      });
+      if (val) s.value = val;
     });
   } catch(e) {}
 }
 
-// ─── REPORTS ───
-async function loadReports() {
-  const y = state.rptYear, m = state.rptMonth;
-  const label = `${MONTHS[m]} ${y}`;
-  $('reportMonthLabel').textContent = label; $('headerMonth').textContent = label;
+async function loadAccountsForSelect() {
   try {
-    const s = await api(`/api/reports/summary?year=${y}&month=${m}`);
-    $('reportCards').innerHTML = `
-      <div class="card"><div class="label">Income</div><div class="value green">$${fmt(s.income)}</div></div>
-      <div class="card"><div class="label">Expenses</div><div class="value red">$${fmt(s.expense)}</div></div>
-      <div class="card"><div class="label">Investments</div><div class="value amber">$${fmt(s.investment)}</div></div>
-      <div class="card"><div class="label">Net</div><div class="value ${s.net>=0?'green':'red'}">$${fmt(s.net)}</div></div>`;
-
-    const monthly = await api('/api/reports/monthly');
-    const last12 = monthly.slice(0,12).reverse();
-    destroyChart('monthly');
-    charts.monthly = new Chart($('monthlyChart'), {
-      type: 'bar', data: {
-        labels: last12.map(r => r.month.slice(5)),
-        datasets: [
-          { label: 'Income', data: last12.map(r => r.income), backgroundColor: '#2dd46b', borderRadius: 3 },
-          { label: 'Expense', data: last12.map(r => r.expense), backgroundColor: '#ff4757', borderRadius: 3 },
-        ]
-      }, options: {
-        responsive: true, maintainAspectRatio: true,
-        scales: { y: { grid: { color: 'rgba(255,255,255,.04)' }, ticks: { callback: v => '$'+fmt(v), font: {size:9} } },
-                 x: { grid: { display: false }, ticks: { font: {size:9} } } },
-        plugins: { legend: { labels: { color: '#8a90a8', font: {size:10}, boxWidth:12 } } }
-      }
+    const accounts = await api('/api/accounts');
+    const s = $('txAccount');
+    if (!s) return;
+    s.innerHTML = '<option value="">— None —</option>';
+    accounts.forEach(a => {
+      const o = document.createElement('option');
+      o.value = a.id;
+      o.textContent = (a.icon || '🏦') + ' ' + a.name;
+      s.appendChild(o);
     });
-
-    const exp = await api(`/api/reports/category-breakdown?year=${y}&month=${m}&type=expense`);
-    destroyChart('expensePie');
-    charts.expensePie = new Chart($('expensePieChart'), {
-      type: 'pie', data: {
-        labels: exp.map(c => c.category),
-        datasets: [{ data: exp.map(c => c.amount), backgroundColor: ['#ff4757','#ffb347','#4d7cff','#a855f7','#2dd46b','#ec4899','#14b8a6'] }]
-      }, options: {
-        responsive: true, maintainAspectRatio: true,
-        plugins: { legend: { position: 'bottom', labels: { color: '#8a90a8', font: {size:10}, boxWidth:12, padding:8 } } }
-      }
-    });
-
-    const inv = await api(`/api/reports/category-breakdown?year=${y}&month=${m}&type=investment`);
-    destroyChart('investPie');
-    if (inv.length > 0) {
-      charts.investPie = new Chart($('investPieChart'), {
-        type: 'pie', data: {
-          labels: inv.map(c => c.category),
-          datasets: [{ data: inv.map(c => c.amount), backgroundColor: ['#a855f7','#4d7cff','#ffb347','#2dd46b','#ec4899'] }]
-        }, options: {
-          responsive: true, maintainAspectRatio: true,
-          plugins: { legend: { position: 'bottom', labels: { color: '#8a90a8', font: {size:10}, boxWidth:12, padding:8 } } }
-        }
-      });
-    } else {
-      $('investChartWrap').innerHTML = '<h3 style="font-size:13px;color:var(--text2);font-weight:600;margin-bottom:12px">Investment Breakdown</h3><p style="text-align:center;padding:30px;color:var(--text3)">No investments this month</p>';
-    }
-    loadPortfolio();
-  } catch(e) { console.error(e); }
+  } catch(e) {}
 }
 
-function rptNav(dir) {
-  state.rptMonth += dir;
-  if (state.rptMonth < 1) { state.rptMonth = 12; state.rptYear--; }
-  if (state.rptMonth > 12) { state.rptMonth = 1; state.rptYear++; }
-  loadReports();
+function setDateDefaults() {
+  const now = new Date();
+  $('txDate').value = now.toISOString().split('T')[0];
+  updateMonthDisplay();
 }
 
-// ─── CSV EXPORT ───
-function exportCSV() {
-  const y = $('filterYear').value, mo = $('filterMonth').value;
-  const t = $('filterType').value, tag = $('filterTag')?.value || '';
-  let params = {};
-  if (y) params.year = y; if (mo) params.month = mo;
-  if (t) params.type = t; if (tag) params.tag = tag;
-  window.location.href = '/api/transactions/export/csv?' + new URLSearchParams(params);
+function updateMonthDisplay() {
+  const months = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  $('dashboardMonth').textContent = `${months[currentMonth]} ${currentYear}`;
+  $('headerMonth').textContent = `${months[currentMonth]} ${currentYear}`;
 }
 
-// ─── NET WORTH CHART ───
-async function loadNetWorthChart() {
+function navMonth(dir) {
+  currentMonth += dir;
+  if (currentMonth > 12) { currentMonth = 1; currentYear++; }
+  if (currentMonth < 1) { currentMonth = 12; currentYear--; }
+  updateMonthDisplay();
+  if ($('page-dashboard').classList.contains('active')) loadDashboard();
+}
+
+// ─── DASHBOARD ───
+async function loadDashboard() {
   try {
-    const data = await api('/api/reports/net-worth');
-    if (!data.length) return;
-    destroyChart('netWorth');
-    charts.netWorth = new Chart($('netWorthChart'), {
-      type: 'line',
-      data: {
-        labels: data.map(d => d.month.slice(5)),
-        datasets: [{
-          label: 'Net Worth',
-          data: data.map(d => d.net_worth),
-          borderColor: '#2dd46b',
-          backgroundColor: 'rgba(45,212,107,0.1)',
-          fill: true,
-          tension: 0.3,
-          pointRadius: 2,
-        }]
-      },
-      options: {
-        responsive: true, maintainAspectRatio: true,
-        scales: {
-          y: { grid: { color: 'rgba(255,255,255,.04)' }, ticks: { callback: v => '$'+fmt(v), font: {size:9} } },
-          x: { grid: { display: false }, ticks: { font: {size:9} } }
-        },
-        plugins: { legend: { display: false } }
-      }
-    });
-  } catch(e) { console.error(e); }
-}
-
-// ─── PORTFOLIO ───
-async function loadPortfolio() {
-  try {
-    const data = await api('/api/reports/portfolio');
-    if (!data || !data.length) { $('portfolioSection').style.display = 'none'; return; }
-    $('portfolioSection').style.display = 'block';
-    $('portfolioTable').innerHTML = `<div class="portfolio-row portfolio-header"><span>Category</span><span>Cost Basis</span><span>Allocation</span></div>` +
-      data.map(p => `<div class="portfolio-row"><span>${p.category}</span><span>$${fmt(p.cost_basis)}</span><span>${p.allocation_pct.toFixed(1)}%</span></div>`).join('');
-  } catch(e) { console.error(e); }
-}
-
-// ─── RECURRING TRANSACTIONS ───
-function toggleRecurring() {
-  const panel = $('recurringPanel');
-  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
-  if (panel.style.display === 'block') loadRecurring();
-}
-
-async function loadRecurring() {
-  try {
-    const [templates, cats, members] = await Promise.all([
-      api('/api/recurring'),
-      api('/api/categories'),
-      api('/api/members')
+    const [summary, balance, expenseData, memberData, netWorth, budgetSumm] = await Promise.all([
+      api(`/api/reports/summary?year=${currentYear}&month=${currentMonth}`).catch(() => null),
+      api(`/api/reports/balance-over-time?months=12`),
+      api(`/api/reports/category-breakdown?year=${currentYear}&month=${currentMonth}&type=expense`).catch(() => []),
+      api(`/api/reports/member-breakdown?year=${currentYear}&month=${currentMonth}`).catch(() => []),
+      api('/api/reports/net-worth'),
+      api(`/api/budgets/summary?year=${currentYear}&month=${currentMonth}`).catch(() => null),
     ]);
-    $('recurringList').innerHTML = templates.length
-      ? templates.map(t => `<div class="recurring-item">
-          <div><strong>${t.label}</strong> — $${fmt(t.amount)} <span class="typetag ${t.type}">${t.type}</span> (day ${t.day_of_month})${t.tags ? ` <span class="tag-badge">${t.tags}</span>` : ''}</div>
-          <button class="btn btn-outline btn-sm" onclick="deleteRecurring(${t.id})" style="width:auto">🗑️</button>
-        </div>`).join('')
-      : '<p style="color:var(--text3);padding:12px 0">No recurring templates yet</p>';
-    $('recCategory').innerHTML = cats.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-    $('recMember').innerHTML = members.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
-  } catch(e) { console.error(e); }
+
+    if (summary) {
+      $('summaryCards').innerHTML = `
+        <div class="card"><div class="label">Income</div><div class="value green">${fmt(summary.income)}</div></div>
+        <div class="card"><div class="label">Expenses</div><div class="value red">${fmt(summary.expense)}</div></div>
+        <div class="card"><div class="label">Net</div><div class="value ${summary.net >= 0 ? 'green' : 'red'}">${fmt(summary.net)}</div></div>
+        <div class="card"><div class="label">Invested</div><div class="value amber">${fmt(summary.investment)}</div></div>
+      `;
+    }
+
+    // Budget progress on dashboard
+    if (budgetSumm && budgetSumm.total_budget > 0) {
+      const pct = budgetSumm.total_budget > 0 ? Math.min(budgetSumm.total_spent / budgetSumm.total_budget * 100, 100) : 0;
+      const color = pct > 90 ? 'var(--red)' : pct > 70 ? 'var(--amber)' : 'var(--green)';
+      $('budgetProgressCard').style.display = 'block';
+      $('budgetProgressContent').innerHTML = `
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px">
+          <span>Budget: ${fmt(budgetSumm.total_spent)} spent of ${fmt(budgetSumm.total_budget)}</span>
+          <span style="color:${color}">${pct.toFixed(1)}%</span>
+        </div>
+        <div class="budget-bar"><div class="fill" style="width:${pct}%;background:${color}"></div></div>
+        <div style="font-size:12px;color:var(--text2);margin-top:4px">${fmt(budgetSumm.remaining)} remaining</div>
+      `;
+    } else {
+      $('budgetProgressCard').style.display = 'none';
+    }
+
+    // Balance chart
+    if (chartInstances.balance) chartInstances.balance.destroy();
+    if (balance && balance.length) {
+      const ctx = $('balanceChart').getContext('2d');
+      chartInstances.balance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: balance.map(d => d.month),
+          datasets: [{ label: 'Balance', data: balance.map(d => d.balance), borderColor: '#4d7cff', backgroundColor: 'rgba(77,124,255,.1)', fill: true, tension: .4, pointRadius: 2 }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+          scales: { y: { grid: { color: 'rgba(255,255,255,.05)' }, ticks: { callback: v => '$'+v.toLocaleString(), color: '#8a90a8' } },
+            x: { ticks: { maxTicksLimit: 6, color: '#8a90a8' } } } }
+      });
+    }
+
+    // Net worth chart
+    if (chartInstances.netWorth) chartInstances.netWorth.destroy();
+    if (netWorth && netWorth.length) {
+      const ctx = $('netWorthChart').getContext('2d');
+      const vals = netWorth.map(d => d.net_worth);
+      const latest = vals[vals.length-1] || 0;
+      chartInstances.netWorth = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: netWorth.map(d => d.month),
+          datasets: [{ label: 'Net Worth', data: vals, borderColor: latest >= 0 ? '#2dd46b' : '#ff4757',
+            backgroundColor: latest >= 0 ? 'rgba(45,212,107,.1)' : 'rgba(255,71,87,.1)', fill: true, tension: .4, pointRadius: 2 }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+          scales: { y: { grid: { color: 'rgba(255,255,255,.05)' }, ticks: { callback: v => '$'+v.toLocaleString(), color: '#8a90a8' } },
+            x: { ticks: { maxTicksLimit: 6, color: '#8a90a8' } } } }
+      });
+    }
+
+    // Expense pie
+    if (chartInstances.expensePie) chartInstances.expensePie.destroy();
+    if (expenseData.length) {
+      const colors = ['#ff4757','#ff6b81','#ffb347','#4d7cff','#a855f7','#2dd46b','#ff9ff3','#54a0ff','#5f27cd','#01a3a4'];
+      const ctx = $('expensePieChart').getContext('2d');
+      chartInstances.expensePie = new Chart(ctx, {
+        type: 'doughnut',
+        data: { labels: expenseData.map(d => d.category), datasets: [{ data: expenseData.map(d => d.amount), backgroundColor: colors.slice(0, expenseData.length) }] },
+        options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { color: '#8a90a8', padding: 8, boxWidth: 10, font: { size: 10 } } } } }
+      });
+    }
+
+    // Member chart
+    if (chartInstances.member) chartInstances.member.destroy();
+    if (memberData.length) {
+      const ctx = $('memberChart').getContext('2d');
+      chartInstances.member = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: memberData.map(d => d.member),
+          datasets: [
+            { label: 'Income', data: memberData.map(d => d.income), backgroundColor: 'rgba(45,212,107,.7)', borderRadius: 4 },
+            { label: 'Expense', data: memberData.map(d => d.expense), backgroundColor: 'rgba(255,71,87,.7)', borderRadius: 4 },
+            { label: 'Investment', data: memberData.map(d => d.investment), backgroundColor: 'rgba(168,85,247,.7)', borderRadius: 4 },
+          ]
+        },
+        options: { responsive: true, scales: { x: { stacked: false, ticks: { color: '#8a90a8' } },
+          y: { stacked: false, ticks: { callback: v => '$'+v.toLocaleString(), color: '#8a90a8' }, grid: { color: 'rgba(255,255,255,.05)' } } },
+          plugins: { legend: { position: 'bottom', labels: { color: '#8a90a8', boxWidth: 10, font: { size: 10 } } } } }
+      });
+    }
+  } catch(e) { console.error('Dashboard error:', e); }
+}
+
+// ─── TRANSACTION FORM ───
+async function populateTxForm() {
+  await Promise.all([loadCategoriesForSelect('txCategory'), loadAccountsForSelect()]);
+}
+
+async function loadCategoriesForSelect(id, selectedId = null) {
+  try {
+    const type = $('txType').value;
+    const cats = await api(`/api/categories?type=${type}`);
+    const s = $(id);
+    if (!s) return;
+    const val = s.value;
+    s.innerHTML = '';
+    cats.forEach(c => {
+      const o = document.createElement('option');
+      o.value = c.id; o.textContent = c.name;
+      if (selectedId && c.id === selectedId) o.selected = true;
+      s.appendChild(o);
+    });
+    if (!selectedId && val) s.value = val;
+  } catch(e) {}
+}
+
+function updateTxForm() {
+  loadCategoriesForSelect('txCategory');
+}
+
+async function saveTransaction() {
+  const data = {
+    date: $('txDate').value,
+    amount: parseFloat($('txAmount').value) || 0,
+    type: $('txType').value,
+    category_id: parseInt($('txCategory').value) || 1,
+    member_id: parseInt($('txMember').value) || 1,
+    account_id: parseInt($('txAccount').value) || null,
+    description: $('txDescription').value.trim() || null,
+    tags: $('txTags').value.trim() || null,
+  };
+  if (!data.date || !data.amount) { toast('Fill in date and amount', 'error'); return; }
+
+  try {
+    const isEdit = !!$('txEditId').value;
+    let res;
+    if (isEdit) {
+      res = await api(`/api/transactions/${$('txEditId').value}`, { method: 'PUT', body: JSON.stringify(data) });
+    } else {
+      res = await api('/api/transactions', { method: 'POST', body: JSON.stringify(data) });
+    }
+
+    // Upload receipts if any
+    const files = $('txReceipts').files;
+    if (files.length > 0) {
+      const fd = new FormData();
+      for (let f of files) fd.append('files', f);
+      await api(`/api/transactions/${res.id}/attachments`, { method: 'POST', body: fd, noJson: true });
+    }
+
+    toast(isEdit ? 'Transaction updated!' : 'Transaction added!', 'success');
+    resetTxForm();
+    if ($('page-history').classList.contains('active')) loadTransactions();
+    selectTab('dashboard');
+  } catch(e) { toast(e.message || 'Error saving transaction', 'error'); }
+}
+
+function resetTxForm() {
+  $('txEditId').value = '';
+  $('txSubmitBtn').textContent = 'Add Transaction';
+  $('txAmount').value = '';
+  $('txDescription').value = '';
+  $('txTags').value = '';
+  $('txReceipts').value = '';
+  $('txReceiptPreview').innerHTML = '';
+  setDateDefaults();
+}
+
+// ─── HISTORY ───
+function populateHistFilters() {
+  populateYearSelect('histYear');
+  const m = $('histMonth');
+  if (m.options.length <= 1) {
+    const months = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    for (let i = 1; i <= 12; i++) {
+      const o = document.createElement('option');
+      o.value = i; o.textContent = months[i];
+      if (i === new Date().getMonth() + 1) o.selected = true;
+      m.appendChild(o);
+    }
+  }
+}
+
+async function loadTransactions() {
+  const params = new URLSearchParams();
+  const y = $('histYear').value; const m = $('histMonth').value;
+  const t = $('histType').value; const mid = $('histMember').value;
+  const tag = $('histTag').value.trim();
+  if (y) params.set('year', y);
+  if (m) params.set('month', m);
+  if (t) params.set('type', t);
+  if (mid) params.set('member_id', mid);
+  if (tag) params.set('tag', tag);
+
+  try {
+    const txs = await api(`/api/transactions?${params.toString()}`);
+    if (!txs.length) {
+      $('txList').innerHTML = '<div class="empty-state"><div class="icon">📋</div><p>No transactions found</p></div>';
+      return;
+    }
+    $('txList').innerHTML = txs.map(tx => {
+      const icons = { income: '📈', expense: '📉', investment: '💎' };
+      return `<div class="tx-item" onclick="editTx(${tx.id})" ondblclick="if(confirm('Delete this transaction?')) deleteTx(${tx.id})">
+        <div class="tx-icon ${tx.type}">${icons[tx.type] || '💵'}</div>
+        <div class="tx-info">
+          <div class="top"><span class="category">${tx.category_name}</span><span class="typetag ${tx.type}">${tx.type}</span></div>
+          <div class="meta">
+            <span>${tx.date}</span>
+            <span>${tx.member_name}</span>
+            ${tx.tags ? `<span class="tag-badge">${tx.tags}</span>` : ''}
+            ${tx.account_name ? `<span>🏦 ${tx.account_name}</span>` : ''}
+          </div>
+        </div>
+        <div style="text-align:right">
+          <div class="tx-amount ${tx.type}">${fmt(tx.amount)}</div>
+          <button class="btn btn-sm btn-outline" style="padding:2px 8px;font-size:10px;min-height:auto;width:auto;margin-top:4px" onclick="event.stopPropagation();editTx(${tx.id})">✏️</button>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) { toast('Error loading transactions', 'error'); }
+}
+
+async function editTx(id) {
+  try {
+    const txs = await api(`/api/transactions?id=${id}&limit=1`);
+    // Actually fetch the single transaction
+    const all = await api(`/api/transactions?limit=200`);
+    const tx = all.find(t => t.id === id);
+    if (!tx) return;
+    $('txType').value = tx.type;
+    await loadCategoriesForSelect('txCategory', tx.category_id);
+    $('txDate').value = tx.date;
+    $('txAmount').value = tx.amount;
+    $('txMember').value = tx.member_id;
+    $('txAccount').value = tx.account_id || '';
+    $('txDescription').value = tx.description || '';
+    $('txTags').value = tx.tags || '';
+    $('txEditId').value = tx.id;
+    $('txSubmitBtn').textContent = 'Update Transaction';
+    selectTab('add');
+  } catch(e) { toast('Error loading transaction', 'error'); }
+}
+
+async function deleteTx(id) {
+  try {
+    await api(`/api/transactions/${id}`, { method: 'DELETE' });
+    toast('Transaction deleted', 'success');
+    loadTransactions();
+  } catch(e) { toast('Error deleting', 'error'); }
+}
+
+function exportCSV() {
+  const params = new URLSearchParams();
+  const y = $('histYear').value; const m = $('histMonth').value;
+  const t = $('histType').value; const tag = $('histTag').value.trim();
+  if (y) params.set('year', y);
+  if (m) params.set('month', m);
+  if (t) params.set('type', t);
+  if (tag) params.set('tag', tag);
+  window.location.href = '/api/transactions/export/csv?' + params.toString();
+}
+
+// ─── REPORTS ───
+async function initReports() {
+  const year = parseInt($('reportYear').value) || new Date().getFullYear();
+  try {
+    const [monthly, expenseData, investData, portfolio] = await Promise.all([
+      api(`/api/reports/monthly?year=${year}`),
+      api(`/api/reports/category-breakdown?year=${year}&month=1&type=expense&_t=${Date.now()}`).catch(() => []),
+      api(`/api/reports/category-breakdown?year=${year}&month=1&type=investment&_t=${Date.now()}`).catch(() => []),
+      api('/api/reports/portfolio'),
+    ]);
+
+    // Monthly chart
+    if (chartInstances.monthly) chartInstances.monthly.destroy();
+    if (monthly && monthly.length) {
+      const months = monthly.slice().reverse();
+      const ctx = $('monthlyChart').getContext('2d');
+      chartInstances.monthly = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: months.map(d => d.month),
+          datasets: [
+            { label: 'Income', data: months.map(d => d.income), backgroundColor: 'rgba(45,212,107,.7)', borderRadius: 4 },
+            { label: 'Expense', data: months.map(d => d.expense), backgroundColor: 'rgba(255,71,87,.7)', borderRadius: 4 },
+            { label: 'Investment', data: months.map(d => d.investment), backgroundColor: 'rgba(168,85,247,.7)', borderRadius: 4 },
+          ]
+        },
+        options: { responsive: true, scales: { x: { ticks: { color: '#8a90a8' } },
+          y: { ticks: { callback: v => '$'+v.toLocaleString(), color: '#8a90a8' }, grid: { color: 'rgba(255,255,255,.05)' } } },
+          plugins: { legend: { position: 'bottom', labels: { color: '#8a90a8', boxWidth: 10, font: { size: 10 } } } } }
+      });
+    }
+
+    // Expense breakdown
+    if (chartInstances.expense) chartInstances.expense.destroy();
+    if (expenseData.length) {
+      const colors = ['#ff4757','#ff6b81','#ffb347','#4d7cff','#a855f7','#2dd46b','#ff9ff3','#54a0ff','#5f27cd','#01a3a4'];
+      const ctx = $('expenseChart').getContext('2d');
+      chartInstances.expense = new Chart(ctx, {
+        type: 'doughnut',
+        data: { labels: expenseData.map(d => d.category), datasets: [{ data: expenseData.map(d => d.amount), backgroundColor: colors.slice(0, expenseData.length) }] },
+        options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { color: '#8a90a8', padding: 8, boxWidth: 10, font: { size: 10 } } } } }
+      });
+    }
+
+    // Investment breakdown
+    if (chartInstances.invest) chartInstances.invest.destroy();
+    if (investData.length) {
+      const colors = ['#a855f7','#c084fc','#7c3aed','#9333ea','#d8b4fe'];
+      const ctx = $('investChart').getContext('2d');
+      chartInstances.invest = new Chart(ctx, {
+        type: 'doughnut',
+        data: { labels: investData.map(d => d.category), datasets: [{ data: investData.map(d => d.amount), backgroundColor: colors.slice(0, investData.length) }] },
+        options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { color: '#8a90a8', padding: 8, boxWidth: 10, font: { size: 10 } } } } }
+      });
+    }
+
+    // Portfolio
+    if (portfolio && portfolio.length) {
+      $('portfolioSection').style.display = 'block';
+      const total = portfolio.reduce((s, p) => s + p.cost_basis, 0);
+      $('portfolioTable').innerHTML =
+        `<div class="portfolio-row portfolio-header"><span>Category</span><span>Cost Basis</span><span>Allocation</span></div>` +
+        portfolio.map(p =>
+          `<div class="portfolio-row"><span>${p.category}</span><span>${fmt(p.cost_basis)}</span><span>${p.allocation_pct.toFixed(1)}%</span></div>`
+        ).join('') +
+        `<div class="portfolio-row" style="font-weight:600;border-top:2px solid var(--border);padding-top:8px;margin-top:4px"><span>Total</span><span>${fmt(total)}</span><span>100%</span></div>`;
+    } else {
+      $('portfolioSection').style.display = 'none';
+    }
+  } catch(e) { console.error('Reports error:', e); }
+}
+
+function downloadPDF() {
+  const year = $('reportYear').value;
+  window.open(`/api/reports/pdf?year=${year}`, '_blank');
+}
+
+// ─── SETTINGS ───
+async function loadSettings() {
+  try {
+    const [members, cats, budgets, recurring] = await Promise.all([
+      api('/api/members'),
+      api('/api/categories'),
+      loadBudgets().catch(() => {}),
+      api('/api/recurring'),
+    ]);
+
+    // Members
+    $('memberList').innerHTML = members.map(m =>
+      `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
+        <span>${m.name}</span>
+        <button class="btn btn-sm btn-outline" onclick="deleteMember(${m.id})" style="padding:4px 10px;min-height:auto">Delete</button>
+      </div>`
+    ).join('');
+
+    // Categories
+    $('catList').innerHTML = cats.map(c =>
+      `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
+        <span><span class="typetag ${c.type}" style="margin-right:8px">${c.type}</span>${c.name}</span>
+        <button class="btn btn-sm btn-outline" onclick="deleteCategory(${c.id})" style="padding:4px 10px;min-height:auto">Delete</button>
+      </div>`
+    ).join('');
+
+    // Recurring
+    populateRecurring(recurring);
+
+    // Populate recurring form dropdowns
+    await loadRecurringFormSelects();
+
+  } catch(e) { toast('Error loading settings', 'error'); }
+}
+
+async function addMember() {
+  const name = $('newMemberName').value.trim();
+  if (!name) return;
+  try {
+    await api('/api/members', { method: 'POST', body: JSON.stringify({ name }) });
+    $('newMemberName').value = '';
+    toast('Member added!', 'success');
+    loadSettings();
+    loadMembersForSelect();
+  } catch(e) { toast(e.message || 'Error', 'error'); }
+}
+
+function deleteMember(id) {
+  if (!confirm('Delete this member?')) return;
+  api(`/api/members/${id}`, { method: 'DELETE' }).then(() => {
+    toast('Member deleted', 'success');
+    loadSettings();
+    loadMembersForSelect();
+  }).catch(e => toast(e.message, 'error'));
+}
+
+async function addCategory() {
+  const name = $('newCatName').value.trim();
+  const type = $('newCatType').value;
+  if (!name) return;
+  try {
+    await api('/api/categories', { method: 'POST', body: JSON.stringify({ name, type }) });
+    $('newCatName').value = '';
+    toast('Category added!', 'success');
+    loadSettings();
+  } catch(e) { toast(e.message || 'Error', 'error'); }
+}
+
+function deleteCategory(id) {
+  if (!confirm('Delete this category?')) return;
+  api(`/api/categories/${id}`, { method: 'DELETE' }).then(() => {
+    toast('Category deleted', 'success');
+    loadSettings();
+  }).catch(e => toast(e.message, 'error'));
+}
+
+async function changePassword() {
+  const cur = $('setCurPass').value;
+  const nw = $('setNewPass').value;
+  if (!cur || !nw) { toast('Fill in both fields', 'error'); return; }
+  try {
+    await api('/api/auth/change-password', { method: 'POST', body: JSON.stringify({ current_password: cur, new_password: nw }) });
+    $('setCurPass').value = ''; $('setNewPass').value = '';
+    toast('Password changed!', 'success');
+  } catch(e) { toast(e.message || 'Error', 'error'); }
+}
+
+// ─── RECURRING ───
+async function loadRecurringFormSelects() {
+  try {
+    const [cats, members] = await Promise.all([
+      api('/api/categories'),
+      api('/api/members'),
+    ]);
+    const catSelect = $('recCat');
+    catSelect.innerHTML = '';
+    cats.forEach(c => { const o = document.createElement('option'); o.value = c.id; o.textContent = c.name; catSelect.appendChild(o); });
+    const memSelect = $('recMember');
+    memSelect.innerHTML = '';
+    members.forEach(m => { const o = document.createElement('option'); o.value = m.id; o.textContent = m.name; memSelect.appendChild(o); });
+  } catch(e) {}
+}
+
+function populateRecurring(templates) {
+  $('recurringList').innerHTML = templates.length
+    ? templates.map(t =>
+      `<div class="recurring-item"><div><strong>${t.label}</strong> — ${fmt(t.amount)} <span class="typetag ${t.type}">${t.type}</span> (day ${t.day_of_month})${t.tags ? ` <span class="tag-badge">${t.tags}</span>` : ''}</div>
+      <button class="btn btn-sm btn-outline" onclick="deleteRecurring(${t.id})" style="padding:4px 8px;min-height:auto">✕</button></div>`
+    ).join('')
+    : '<p style="color:var(--text3);padding:12px 0">No recurring templates yet</p>';
 }
 
 async function saveRecurring() {
   const data = {
     label: $('recLabel').value.trim(),
-    amount: parseFloat($('recAmount').value),
+    amount: parseFloat($('recAmount').value) || 0,
     type: $('recType').value,
-    category_id: parseInt($('recCategory').value),
+    category_id: parseInt($('recCat').value),
     member_id: parseInt($('recMember').value),
-    description: $('recDesc').value.trim() || null,
     tags: $('recTags').value.trim() || null,
-    day_of_month: parseInt($('recDay').value),
+    day_of_month: parseInt($('recDay').value) || 1,
   };
-  if (!data.label || !data.amount) return toast('Label and amount required', 'error');
+  if (!data.label || !data.amount) { toast('Fill in label and amount', 'error'); return; }
   try {
     await api('/api/recurring', { method: 'POST', body: JSON.stringify(data) });
-    toast('Recurring template saved ✓');
-    $('recLabel').value = ''; $('recAmount').value = ''; $('recDesc').value = ''; $('recTags').value = '';
-    loadRecurring();
-  } catch(e) { toast(e.message, 'error'); }
+    toast('Template added!', 'success');
+    $('recLabel').value = ''; $('recAmount').value = '';
+    loadSettings();
+  } catch(e) { toast(e.message || 'Error', 'error'); }
 }
 
-async function deleteRecurring(id) {
+function deleteRecurring(id) {
   if (!confirm('Delete this recurring template?')) return;
-  try {
-    await api(`/api/recurring/${id}`, { method: 'DELETE' });
-    toast('Deleted ✓');
-    loadRecurring();
-  } catch(e) { toast(e.message, 'error'); }
+  api(`/api/recurring/${id}`, { method: 'DELETE' }).then(() => {
+    toast('Template deleted', 'success');
+    loadSettings();
+  }).catch(e => toast(e.message, 'error'));
 }
 
 async function processRecurring() {
   if (!confirm('Process recurring transactions now?')) return;
   try {
     const result = await api('/api/recurring/process', { method: 'POST' });
-    toast(`Created ${result.created || 0} transactions ✓`);
-    loadRecurring();
-  } catch(e) { toast(e.message, 'error'); }
+    toast(`Created ${result.created} transaction(s)`, 'success');
+    loadSettings();
+  } catch(e) { toast(e.message || 'Error', 'error'); }
 }
 
-// ─── DESKTOP SIDEBAR ───
-function renderSidebar() {
-  const sb = $('desktopSidebar');
-  if (!sb) return;
-  const pages = [
-    { name: 'dashboard', icon: '📊', label: 'Dashboard' },
-    { name: 'add', icon: '➕', label: 'Add Transaction' },
-    { name: 'transactions', icon: '📋', label: 'History' },
-    { name: 'reports', icon: '📈', label: 'Reports' },
-  ];
-  sb.innerHTML = `
-    <div class="logo-area">
-      <div class="logo-square">💰</div>
-      <span class="logo-text">Finance</span>
-    </div>
-    ${pages.map(p => `<button class="nav-item${p.name==='dashboard'?' active':''}" data-page="${p.name}">
-      <span class="icon">${p.icon}</span>${p.label}
-    </button>`).join('')}
-    <div class="user-badge">
-      <span class="avatar">${(state.user||'U')[0].toUpperCase()}</span>
-      <span>${state.user||'User'}</span>
-      <div style="display:flex;gap:4px;margin-left:auto">
-        <button class="logout" onclick="selectTab('settings')" title="Settings">⚙️</button>
-        <button class="logout" onclick="logout()">Sign out</button>
-      </div>
-    </div>
-  `;
-  sb.querySelectorAll('.nav-item').forEach(el => {
-    el.addEventListener('click', () => {
-      document.querySelectorAll('#desktopSidebar .nav-item').forEach(n => n.classList.remove('active'));
-      el.classList.add('active');
-      switchPage(el.dataset.page);
-      if (el.dataset.page === 'dashboard') loadDashboard();
-      if (el.dataset.page === 'transactions') loadTransactions();
-      if (el.dataset.page === 'reports') loadReports();
-      if (el.dataset.page === 'add') populateForm();
-      if (el.dataset.page === 'settings') loadSettings();
-    });
-  });
-}
-
-function logout() {
-  clearAuth();
-  showLogin();
-}
-
-// ─── SETTINGS ───
-function loadSettings() {
-  $('settingsUser').value = state.user || '';
-  $('settingsCurPass').value = '';
-  $('settingsNewPass').value = '';
-  // Pre-populate recurring form dropdowns
-  Promise.all([api('/api/categories'), api('/api/members')]).then(([cats, members]) => {
-    $('recCategory').innerHTML = cats.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-    $('recMember').innerHTML = members.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
-  }).catch(() => {});
-}
-
-async function changePassword() {
-  const cur = $('settingsCurPass').value;
-  const newPw = $('settingsNewPass').value;
-  if (!cur || !newPw) return toast('Fill in both fields', 'error');
-  if (newPw.length < 4) return toast('Password must be 4+ characters', 'error');
+// ─── BUDGETS ───
+async function loadBudgets() {
+  const year = parseInt($('budgetYear').value) || new Date().getFullYear();
+  const month = parseInt($('budgetMonth').value) || (new Date().getMonth() + 1);
   try {
-    await api('/api/auth/change-password', {
-      method: 'POST',
-      body: JSON.stringify({ current_password: cur, new_password: newPw }),
+    const [budgets, cats] = await Promise.all([
+      api(`/api/budgets?year=${year}&month=${month}`),
+      api('/api/categories?type=expense'),
+    ]);
+    const budgetMap = {};
+    budgets.forEach(b => { budgetMap[b.category_id] = b; });
+
+    // Populate budget category dropdown
+    const catSelect = $('budgetCat');
+    catSelect.innerHTML = '';
+    cats.forEach(c => {
+      const o = document.createElement('option');
+      o.value = c.id; o.textContent = c.name;
+      catSelect.appendChild(o);
     });
-    toast('Password changed ✓');
-    $('settingsCurPass').value = '';
-    $('settingsNewPass').value = '';
-  } catch (e) { toast(e.message, 'error'); }
-}
 
-// ─── INIT ───
-async function initApp() {
-  renderSidebar();
-  await initFilters();
-  resetForm();
-  loadDashboard();
-}
-
-// ─── BOOT ───
-(async function boot() {
-  loadAuth();
-  if (state.token) {
-    try {
-      await api('/api/auth/check');
-      hideLogin();
-      initApp();
-    } catch(e) {
-      clearAuth();
-      showLogin();
+    if (!cats.length) {
+      $('budgetList').innerHTML = '<p style="color:var(--text3);padding:8px 0">No expense categories available</p>';
+      return;
     }
-  } else {
-    showLogin();
-  }
-})();
-</script>
-<script>
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js');
+
+    $('budgetList').innerHTML = cats.map(c => {
+      const b = budgetMap[c.id];
+      const budgeted = b ? b.amount : 0;
+      const spent = b ? b.spent : 0;
+      const pct = budgeted > 0 ? Math.min(spent / budgeted * 100, 100) : 0;
+      const color = pct > 90 ? 'var(--red)' : pct > 70 ? 'var(--amber)' : 'var(--green)';
+      return `<div class="budget-cat">
+        <span class="bc-name">${c.name}</span>
+        <div class="bc-bar"><div class="fill" style="width:${pct}%;background:${color}"></div></div>
+        <span class="bc-spent">${fmt(spent)}</span>
+        <div class="bc-input"><input type="number" step="0.01" value="${budgeted}" data-cat-id="${c.id}" placeholder="Budget"></div>
+      </div>`;
+    }).join('');
+  } catch(e) { console.error('Budget error:', e); }
 }
+
+async function saveBudget() {
+  const catId = parseInt($('budgetCat').value);
+  const amount = parseFloat($('budgetAmt').value);
+  const year = parseInt($('budgetYear').value) || new Date().getFullYear();
+  const month = parseInt($('budgetMonth').value) || (new Date().getMonth() + 1);
+  if (!amount || amount < 0) { toast('Enter a valid amount', 'error'); return; }
+  try {
+    await api('/api/budgets', { method: 'POST', body: JSON.stringify({ category_id: catId, amount, month, year }) });
+    $('budgetAmt').value = '';
+    toast('Budget saved!', 'success');
+    loadBudgets();
+  } catch(e) { toast(e.message || 'Error', 'error'); }
+}
+
+// ─── ACCOUNTS ───
+function showAddAccountModal() { openModal('addAccountModal'); }
+
+async function saveAccount() {
+  const data = {
+    name: $('accName').value.trim(),
+    type: $('accType').value,
+    icon: $('accIcon').value.trim() || null,
+  };
+  if (!data.name) { toast('Enter account name', 'error'); return; }
+  try {
+    await api('/api/accounts', { method: 'POST', body: JSON.stringify(data) });
+    closeModal('addAccountModal');
+    $('accName').value = ''; $('accIcon').value = '🏦';
+    toast('Account created!', 'success');
+    loadAccounts();
+    loadAccountsForSelect();
+  } catch(e) { toast(e.message || 'Error', 'error'); }
+}
+
+async function loadAccounts() {
+  try {
+    const accounts = await api('/api/accounts');
+    if (!accounts.length) {
+      $('accountList').innerHTML = '<div class="empty-state"><div class="icon">🏦</div><p>No accounts yet. <strong>Add your bank accounts, cash, and more.</strong></p></div>';
+      return;
+    }
+    $('accountList').innerHTML = accounts.map(a => {
+      const typeIcons = { bank: '🏦', cash: '💵', credit_card: '💳', metal_vault: '🥇', investment: '📈' };
+      return `<div class="acc-card">
+        <div class="acc-icon">${a.icon || typeIcons[a.type] || '🏦'}</div>
+        <div class="acc-info">
+          <div class="name">${a.name}</div>
+          <span class="type-badge">${a.type.replace('_',' ')}</span>
+        </div>
+        <div class="acc-balance ${a.balance >= 0 ? 'positive' : 'negative'}">${fmt(a.balance)}</div>
+      </div>`;
+    }).join('');
+  } catch(e) { toast('Error loading accounts', 'error'); }
+}
+
+// ─── METALS ───
+function showAddMetalModal(data) {
+  if (data) {
+    $('metalModalTitle').textContent = 'Edit Metal Holding';
+    $('metalEditId').value = data.id;
+    $('metalType').value = data.metal_type;
+    $('metalForm').value = data.form;
+    $('metalWeight').value = data.weight_grams;
+    $('metalPurity').value = Math.round(data.purity * 1000);
+    $('metalCost').value = data.cost_basis;
+    $('metalDate').value = data.purchase_date || '';
+    $('metalLocation').value = data.storage_location || '';
+    $('metalNotes').value = data.notes || '';
+    $('metalSaveBtn').textContent = 'Update Holding';
+  } else {
+    $('metalModalTitle').textContent = 'Add Metal Holding';
+    $('metalEditId').value = '';
+    $('metalType').value = 'gold';
+    $('metalForm').value = 'bar';
+    $('metalWeight').value = '';
+    $('metalPurity').value = 999;
+    $('metalCost').value = '';
+    $('metalDate').value = new Date().toISOString().split('T')[0];
+    $('metalLocation').value = '';
+    $('metalNotes').value = '';
+    $('metalSaveBtn').textContent = 'Add Holding';
+  }
+  updatePurityLabel();
+  openModal('addMetalModal');
+}
+
+function updatePurityLabel() {
+  const p = parseInt($('metalPurity').value) || 0;
+  const kt = (p / 1000 * 24).toFixed(1);
+  $('metalPurityLabel').textContent = kt + 'K';
+}
+
+$('metalPurity').addEventListener('input', updatePurityLabel);
+
+async function saveMetal() {
+  const purity = (parseInt($('metalPurity').value) || 999) / 1000;
+  const data = {
+    metal_type: $('metalType').value,
+    form: $('metalForm').value,
+    weight_grams: parseFloat($('metalWeight').value) || 0,
+    purity: purity,
+    cost_basis: parseFloat($('metalCost').value) || 0,
+    purchase_date: $('metalDate').value || null,
+    storage_location: $('metalLocation').value.trim() || null,
+    notes: $('metalNotes').value.trim() || null,
+  };
+  if (!data.weight_grams || !data.cost_basis) { toast('Enter weight and cost', 'error'); return; }
+  try {
+    const editId = $('metalEditId').value;
+    if (editId) {
+      await api(`/api/metals/${editId}`, { method: 'PUT', body: JSON.stringify(data) });
+      toast('Metal updated!', 'success');
+    } else {
+      await api('/api/metals', { method: 'POST', body: JSON.stringify(data) });
+      toast('Metal added!', 'success');
+    }
+    closeModal('addMetalModal');
+    loadMetals();
+  } catch(e) { toast(e.message || 'Error', 'error'); }
+}
+
+async function loadMetals() {
+  try {
+    const [metals, summary] = await Promise.all([
+      api('/api/metals'),
+      api('/api/metals/summary'),
+    ]);
+
+    // Summary cards
+    if (summary && summary.items.length) {
+      $('metalSummaryCards').innerHTML = `
+        <div class="summ-card"><div class="sl">Total Weight</div><div class="sv">${summary.grand_total_weight.toFixed(1)}g</div></div>
+        <div class="summ-card"><div class="sl">Total Value</div><div class="sv green">${fmt(summary.grand_total_value)}</div></div>
+        <div class="summ-card"><div class="sl">Total Cost</div><div class="sv">${fmt(summary.grand_total_cost)}</div></div>
+        <div class="summ-card"><div class="sl">Gain/Loss</div><div class="sv ${summary.grand_gain_loss >= 0 ? 'green' : 'red'}">${fmt(summary.grand_gain_loss)}</div></div>
+      `;
+    } else {
+      $('metalSummaryCards').innerHTML = '';
+    }
+
+    // Metal list grouped by type
+    if (!metals.length) {
+      $('metalList').innerHTML = '<div class="empty-state"><div class="icon">🥇</div><p>No metals tracked yet. <strong>Start tracking your gold, silver, and other precious metals.</strong></p></div>';
+      return;
+    }
+
+    const groups = {};
+    const typeIcons = { gold: '🥇', silver: '🥈', platinum: '🔘', palladium: '🔘', copper: '🪙' };
+    metals.forEach(m => {
+      if (!groups[m.metal_type]) groups[m.metal_type] = [];
+      groups[m.metal_type].push(m);
+    });
+
+    let html = '';
+    for (const [type, items] of Object.entries(groups)) {
+      html += `<div class="metal-group">
+        <div class="metal-group-title">${typeIcons[type] || '🔘'} ${type.charAt(0).toUpperCase() + type.slice(1)} <span class="gcount">${items.length} item(s)</span></div>
+        <div class="metal-list">`;
+      items.forEach(m => {
+        const kt = Math.round(m.purity * 24);
+        const gain = m.current_value - m.cost_basis;
+        const gainPct = m.cost_basis > 0 ? (gain / m.cost_basis * 100).toFixed(1) : 0;
+        html += `
+          <div class="metal-card">
+            <div class="metal-top">
+              <span class="metal-icon">${typeIcons[m.metal_type] || '🔘'}</span>
+              <span class="metal-type-name">${m.form.charAt(0).toUpperCase() + m.form.slice(1)}</span>
+              <span class="metal-form-badge">${kt}K • ${(m.purity * 100).toFixed(1)}%</span>
+            </div>
+            <div class="metal-details">
+              <span>⚖️ ${m.weight_grams.toFixed(1)}g</span>
+              <span>💰 ${fmt(m.cost_basis)}</span>
+              <span class="${gain >= 0 ? 'green' : 'red'}" style="color:${gain >= 0 ? 'var(--green)' : 'var(--red)'}">${gain >= 0 ? '▲' : '▼'} ${fmt(gain)} (${gainPct}%)</span>
+              ${m.storage_location ? `<span>📍 ${m.storage_location}</span>` : ''}
+              ${m.purchase_date ? `<span>📅 ${m.purchase_date}</span>` : ''}
+            </div>
+            <div class="metal-actions">
+              <button onclick='showAddMetalModal(${JSON.stringify(m).replace(/'/g, "\\'")})'>✏️ Edit</button>
+              <button style="color:var(--red)" onclick="deleteMetal(${m.id})">🗑️ Delete</button>
+            </div>
+          </div>`;
+      });
+      html += `</div></div>`;
+    }
+    $('metalList').innerHTML = html;
+  } catch(e) { console.error('Metals error:', e); toast('Error loading metals', 'error'); }
+}
+
+async function deleteMetal(id) {
+  if (!confirm('Delete this metal holding?')) return;
+  try {
+    await api(`/api/metals/${id}`, { method: 'DELETE' });
+    toast('Metal deleted', 'success');
+    loadMetals();
+  } catch(e) { toast(e.message || 'Error', 'error'); }
+}
+
 </script>
 </body>
 </html>
