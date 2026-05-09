@@ -91,7 +91,17 @@ else
     APP_OK="no"
 fi
 
-# ─── Summary ───
+# ─── Step 9: Verify GPG recovery keys on remote (weekly) ───
+DAY_OF_WEEK=$(date +%u)
+if [ "$DAY_OF_WEEK" = "0" ]; then  # Sundays only
+    KEY_CHECK=$(ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no "$REMOTE_HOST" \
+        "ls $REMOTE_DIR/keys/gpg-backup-leadvaults.sec.asc.gpg 2>/dev/null" || echo "MISSING")
+    if [ "$KEY_CHECK" = "MISSING" ]; then
+        echo "[$(date '+%Y-%m-%d %H:%M:%S')] ⚠️ GPG recovery keys missing on remote" >> "$LOG"
+    fi
+fi
+
+# ─── Step 10: Summary ───
 BACKUP_SIZE=$(du -h "${BACKUP_FILE}.db.gpg" | cut -f1)
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] ✅ Backup complete: ${BACKUP_SIZE} | Remote=${REMOTE_OK} | Health=${HEALTH}" >> "$LOG"
 
