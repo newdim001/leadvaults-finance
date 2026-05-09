@@ -6,9 +6,8 @@
     <string>com.familyfinance.app</string>
     <key>ProgramArguments</key>
     <array>
-        <string>/usr/bin/python3</string>
-        <string>-c</string>
-        <string>import sys; sys.path.insert(0, '/Users/suren/Library/Python/3.9/lib/python/site-packages'); import uvicorn; uvicorn.run('main:app', host='0.0.0.0', port=8000)</string>
+        <string>/Users/suren/family-finance/venv/bin/python</string>
+        <string>/Users/suren/family-finance/backend/main.py</string>
     </array>
     <key>WorkingDirectory</key>
     <string>/Users/suren/family-finance/backend</string>
