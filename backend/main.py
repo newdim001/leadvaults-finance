@@ -5,6 +5,8 @@ import csv
 import io
 import math
 import uuid
+import json
+import urllib.request
 from typing import Optional, List
 from fastapi import FastAPI, Depends, HTTPException, Query, UploadFile, File
 from fastapi.staticfiles import StaticFiles
@@ -24,9 +26,11 @@ from database import engine, Base, get_db, SessionLocal
 from models import (
     User, FamilyMember, Category, Transaction, RecurringTemplate,
     Account, Budget, TransactionAttachment, MetalInventory,
+    ExchangeRate,
 )
 from schemas import (
     LoginRequest, TokenResponse, ChangePasswordRequest, RegisterRequest,
+    UserOut, CreateUserRequest,
     CategoryCreate, CategoryOut,
     MemberCreate, MemberOut,
     TransactionCreate, TransactionOut,
@@ -37,6 +41,7 @@ from schemas import (
     MetalCreate, MetalUpdate, MetalOut, MetalSummary, MetalSummaryItem,
     MonthlySummary, CategoryBreakdown, MemberBreakdown,
     NetWorthPoint, PortfolioHolding,
+    ExchangeRateOut,
 )
 
 SECRET_KEY = os.environ.get("SECRET_KEY", "change-me-in-production-v3")
@@ -59,6 +64,45 @@ METAL_PRICES = {
     "palladium": 35.0,
     "copper": 0.009,
 }
+
+BASE_CURRENCY = "AED"
+CURRENCIES = ["AED", "USD", "EUR"]
+CURRENCY_SYMBOLS = {"AED": "د.إ", "USD": "$", "EUR": "€"}
+
+DEFAULT_RATES = {
+    ("AED", "USD"): 0.2723,
+    ("AED", "EUR"): 0.2518,
+    ("USD", "AED"): 3.6725,
+    ("USD", "EUR"): 0.9247,
+    ("EUR", "AED"): 3.9714,
+    ("EUR", "USD"): 1.0814,
+}
+
+
+def get_exchange_rate(from_curr: str, to_curr: str, db: Session) -> float:
+    if from_curr == to_curr:
+        return 1.0
+    rate_obj = db.query(ExchangeRate).filter(
+        ExchangeRate.from_currency == from_curr,
+        ExchangeRate.to_currency == to_curr
+    ).first()
+    if rate_obj:
+        return rate_obj.rate
+    # Fallback to default
+    return DEFAULT_RATES.get((from_curr, to_curr), 1.0)
+
+
+def convert_to_base(amount: float, currency: str, db: Session) -> float:
+    """Convert amount from given currency to BASE_CURRENCY (AED)."""
+    if currency == BASE_CURRENCY:
+        return amount
+    rate = get_exchange_rate(currency, BASE_CURRENCY, db)
+    return amount * rate
+
+
+def fmt_currency(amount: float, currency: str) -> str:
+    symbol = CURRENCY_SYMBOLS.get(currency, currency)
+    return f"{symbol}{amount:,.2f}"
 
 
 def create_token(username: str) -> str:
@@ -91,7 +135,7 @@ def seed_data():
     db = SessionLocal()
     try:
         if db.query(User).count() == 0:
-            db.add(User(username="admin", password_hash=pwd_ctx.hash("admin123")))
+            db.add(User(username="admin", password_hash=pwd_ctx.hash("admin123"), role="admin"))
         if db.query(FamilyMember).count() == 0:
             db.add_all([FamilyMember(name="Suren"), FamilyMember(name="Partner")])
         if db.query(Category).count() == 0:
@@ -125,6 +169,11 @@ def seed_data():
                 Account(name="Credit Card", type="credit_card", icon="\U0001f4b3"),
                 Account(name="Investment Account", type="investment", icon="\U0001f4c8"),
             ])
+        if db.query(ExchangeRate).count() == 0:
+            db.add_all([
+                ExchangeRate(from_currency=f, to_currency=t, rate=r)
+                for (f, t), r in DEFAULT_RATES.items()
+            ])
         db.commit()
     finally:
         db.close()
@@ -134,7 +183,9 @@ seed_data()
 
 def _tx_out(t: Transaction) -> TransactionOut:
     return TransactionOut(
-        id=t.id, date=t.date.isoformat(), amount=t.amount, type=t.type,
+        id=t.id, date=t.date.isoformat(), amount=t.amount,
+        currency=t.currency or "AED", amount_aed=t.amount_aed,
+        type=t.type,
         description=t.description, tags=t.tags,
         category_id=t.category_id, category_name=t.category.name,
         member_id=t.member_id, member_name=t.member.name,
@@ -149,7 +200,14 @@ def login(req: LoginRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.username == req.username).first()
     if not user or not pwd_ctx.verify(req.password, user.password_hash):
         raise HTTPException(401, "Invalid username or password")
-    return TokenResponse(token=create_token(user.username), username=user.username)
+    member_name = user.member.name if user.member else None
+    return TokenResponse(
+        token=create_token(user.username),
+        username=user.username,
+        role=user.role,
+        member_id=user.member_id,
+        member_name=member_name,
+    )
 
 
 @app.post("/api/auth/register", response_model=TokenResponse)
@@ -159,12 +217,19 @@ def register(req: RegisterRequest, db: Session = Depends(get_db)):
         raise HTTPException(400, "Username already taken")
     if len(req.password) < 4:
         raise HTTPException(400, "Password must be at least 4 characters")
-    user = User(username=req.username, password_hash=pwd_ctx.hash(req.password))
-    db.add(user)
-    if db.query(FamilyMember).count() == 0:
-        db.add_all([FamilyMember(name="You"), FamilyMember(name="Partner")])
-    db.commit()
-    return TokenResponse(token=create_token(user.username), username=user.username)
+    # Create a family member named after the user
+    member = FamilyMember(name=req.username.capitalize())
+    db.add(member); db.flush()
+    user = User(username=req.username, password_hash=pwd_ctx.hash(req.password),
+        role="member", member_id=member.id)
+    db.add(user); db.commit(); db.refresh(user)
+    return TokenResponse(
+        token=create_token(user.username),
+        username=user.username,
+        role="member",
+        member_id=user.member_id,
+        member_name=member.name,
+    )
 
 
 @app.post("/api/auth/change-password")
@@ -180,7 +245,57 @@ def change_password(req: ChangePasswordRequest, user: User = Depends(get_current
 
 @app.get("/api/auth/check")
 def check_auth(user: User = Depends(get_current_user)):
-    return {"ok": True, "username": user.username}
+    member_name = user.member.name if user.member else None
+    return {"ok": True, "username": user.username, "role": user.role,
+        "member_id": user.member_id, "member_name": member_name}
+
+
+# ─── User Management (Admin only) ───
+@app.get("/api/users", response_model=List[UserOut])
+def list_users(db: Session = Depends(get_db), admin: User = Depends(get_current_user)):
+    if admin.role != "admin":
+        raise HTTPException(403, "Admin access required")
+    users = db.query(User).all()
+    result = []
+    for u in users:
+        result.append(UserOut(id=u.id, username=u.username, role=u.role,
+            member_id=u.member_id, member_name=u.member.name if u.member else None))
+    return result
+
+
+@app.post("/api/users", response_model=UserOut)
+def create_user(req: CreateUserRequest, db: Session = Depends(get_db), admin: User = Depends(get_current_user)):
+    if admin.role != "admin":
+        raise HTTPException(403, "Admin access required")
+    existing = db.query(User).filter(User.username == req.username).first()
+    if existing:
+        raise HTTPException(400, "Username already taken")
+    member = db.query(FamilyMember).get(req.member_id)
+    if not member:
+        raise HTTPException(400, "Family member not found")
+    user_exists = db.query(User).filter(User.member_id == req.member_id).first()
+    if user_exists:
+        raise HTTPException(400, f"'{member.name}' already has a user account")
+    if len(req.password) < 4:
+        raise HTTPException(400, "Password must be at least 4 characters")
+    db_user = User(username=req.username, password_hash=pwd_ctx.hash(req.password),
+        member_id=req.member_id, role="member")
+    db.add(db_user); db.commit(); db.refresh(db_user)
+    return UserOut(id=db_user.id, username=db_user.username, role=db_user.role,
+        member_id=db_user.member_id, member_name=member.name)
+
+
+@app.delete("/api/users/{user_id}")
+def delete_user(user_id: int, db: Session = Depends(get_db), admin: User = Depends(get_current_user)):
+    if admin.role != "admin":
+        raise HTTPException(403, "Admin access required")
+    if user_id == admin.id:
+        raise HTTPException(400, "Cannot delete yourself")
+    user = db.query(User).get(user_id)
+    if not user:
+        raise HTTPException(404)
+    db.delete(user); db.commit()
+    return {"ok": True}
 
 
 # ─── Categories ───
@@ -241,11 +356,11 @@ def list_accounts(db: Session = Depends(get_db), user: User = Depends(get_curren
     accounts = db.query(Account).order_by(Account.name).all()
     result = []
     for a in accounts:
-        inc = float(db.query(func.sum(Transaction.amount)).filter(
+        inc = float(db.query(func.sum(func.coalesce(Transaction.amount_aed, Transaction.amount))).filter(
             Transaction.account_id == a.id, Transaction.type == "income").scalar() or 0)
-        exp = float(db.query(func.sum(Transaction.amount)).filter(
+        exp = float(db.query(func.sum(func.coalesce(Transaction.amount_aed, Transaction.amount))).filter(
             Transaction.account_id == a.id, Transaction.type == "expense").scalar() or 0)
-        inv = float(db.query(func.sum(Transaction.amount)).filter(
+        inv = float(db.query(func.sum(func.coalesce(Transaction.amount_aed, Transaction.amount))).filter(
             Transaction.account_id == a.id, Transaction.type == "investment").scalar() or 0)
         result.append(AccountOut(id=a.id, name=a.name, type=a.type,
             currency=a.currency, balance=round(inc - exp - inv, 2), icon=a.icon))
@@ -306,7 +421,9 @@ def create_transaction(t: TransactionCreate, db: Session = Depends(get_db), user
         if not db.query(Account).get(t.account_id): raise HTTPException(400, "Account not found")
     try: dt = datetime.date.fromisoformat(t.date)
     except: raise HTTPException(400, "Invalid date")
-    db_t = Transaction(date=dt, amount=t.amount, type=t.type,
+    currency = t.currency or "AED"
+    amount_aed = convert_to_base(t.amount, currency, db)
+    db_t = Transaction(date=dt, amount=t.amount, currency=currency, amount_aed=amount_aed, type=t.type,
         description=t.description, tags=t.tags,
         category_id=t.category_id, member_id=t.member_id, account_id=t.account_id)
     db.add(db_t); db.commit(); db.refresh(db_t)
@@ -323,6 +440,8 @@ def update_transaction(tx_id: int, t: TransactionCreate, db: Session = Depends(g
     try: dt = datetime.date.fromisoformat(t.date)
     except: raise HTTPException(400, "Invalid date")
     db_t.date = dt; db_t.amount = t.amount; db_t.type = t.type
+    db_t.currency = t.currency or "AED"
+    db_t.amount_aed = convert_to_base(t.amount, db_t.currency, db)
     db_t.description = t.description; db_t.tags = t.tags
     db_t.category_id = t.category_id; db_t.member_id = t.member_id
     db_t.account_id = t.account_id
@@ -355,13 +474,151 @@ def export_csv(year: Optional[int] = None, month: Optional[int] = None,
     q = q.order_by(Transaction.date.desc()).all()
     output = io.StringIO()
     w = csv.writer(output)
-    w.writerow(["Date","Type","Category","Member","Amount","Description","Tags","Account"])
+    w.writerow(["Date","Type","Category","Member","Amount","Currency","AED Amount","Description","Tags","Account"])
     for t in q:
         w.writerow([t.date.isoformat(), t.type, t.category.name, t.member.name,
-            t.amount, t.description or "", t.tags or "", t.account.name if t.account else ""])
+            t.amount, t.currency or "AED", t.amount_aed or t.amount,
+            t.description or "", t.tags or "", t.account.name if t.account else ""])
     output.seek(0)
     return StreamingResponse(iter([output.getvalue()]), media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=transactions.csv"})
+
+
+# ─── Exchange Rates ───
+@app.get("/api/exchange-rates", response_model=List[ExchangeRateOut])
+def list_exchange_rates(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    return db.query(ExchangeRate).order_by(ExchangeRate.from_currency, ExchangeRate.to_currency).all()
+
+
+@app.put("/api/exchange-rates/{from_curr}/{to_curr}")
+def update_exchange_rate(from_curr: str, to_curr: str, rate: float = Query(...),
+    db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    if from_curr not in CURRENCIES or to_curr not in CURRENCIES:
+        raise HTTPException(400, "Invalid currency")
+    if rate <= 0:
+        raise HTTPException(400, "Rate must be positive")
+    er = db.query(ExchangeRate).filter(
+        ExchangeRate.from_currency == from_curr,
+        ExchangeRate.to_currency == to_curr
+    ).first()
+    if er:
+        er.rate = rate
+    else:
+        er = ExchangeRate(from_currency=from_curr, to_currency=to_curr, rate=rate)
+        db.add(er)
+    db.commit(); db.refresh(er)
+    # Update all existing transactions with new conversion
+    txs = db.query(Transaction).filter(
+        Transaction.currency == from_curr
+    ).all()
+    for tx in txs:
+        tx.amount_aed = convert_to_base(tx.amount, tx.currency, db)
+    db.commit()
+    return {"ok": True, "from_currency": from_curr, "to_currency": to_curr, "rate": er.rate}
+
+
+@app.get("/api/currencies")
+def list_currencies():
+    return {
+        "base": BASE_CURRENCY,
+        "currencies": CURRENCIES,
+        "symbols": CURRENCY_SYMBOLS,
+    }
+
+
+FX_API_URL = "https://api.frankfurter.app/latest?from=AED&to=USD,EUR"
+FX_API_FALLBACK = "https://open.er-api.com/v6/latest/AED"
+
+
+def _save_rate(from_curr: str, to_curr: str, rate: float, db: Session):
+    er = db.query(ExchangeRate).filter(
+        ExchangeRate.from_currency == from_curr,
+        ExchangeRate.to_currency == to_curr
+    ).first()
+    if er:
+        er.rate = rate
+    else:
+        er = ExchangeRate(from_currency=from_curr, to_currency=to_curr, rate=rate)
+        db.add(er)
+
+
+def _recalc_all_tx(db: Session):
+    txs = db.query(Transaction).filter(Transaction.currency != BASE_CURRENCY).all()
+    for tx in txs:
+        tx.amount_aed = convert_to_base(tx.amount, tx.currency or "AED", db)
+    db.commit()
+
+
+@app.post("/api/exchange-rates/refresh")
+async def refresh_exchange_rates(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    errors = []
+    data = None
+    # Try Frankfurter API first
+    for url in [FX_API_URL, FX_API_FALLBACK]:
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": "LeadVaultsFinance/1.0"})
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                data = json.loads(resp.read().decode())
+            if "rates" in data:
+                break
+        except Exception as e:
+            errors.append(f"{url}: {str(e)}")
+            continue
+
+    if not data or "rates" not in data:
+        raise HTTPException(502, f"Failed to fetch live rates. Errors: {'; '.join(errors)}")
+
+    rates = data["rates"]
+    base = data.get("base", "AED")
+    base_to_currencies = {}
+
+    if base == "AED":
+        for curr in CURRENCIES:
+            if curr == "AED":
+                continue
+            rate_to = rates.get(curr)
+            if rate_to:
+                base_to_currencies[curr] = rate_to
+    else:
+        # Fallback: Frankfurter base might be EUR; open.er-api returns base=AED
+        eur_rate = rates.get("EUR")
+        usd_rate = rates.get("USD")
+        aed_rate = rates.get("AED")
+        if eur_rate:
+            base_to_currencies["EUR"] = eur_rate
+        if usd_rate:
+            base_to_currencies["USD"] = usd_rate
+
+    if not base_to_currencies:
+        raise HTTPException(502, "Could not parse exchange rates from API response")
+
+    # Update all 6 rate pairs
+    for target, rate_to in base_to_currencies.items():
+        rate_from = round(1.0 / rate_to, 6) if rate_to > 0 else 1.0
+        _save_rate("AED", target, round(rate_to, 6), db)
+        _save_rate(target, "AED", rate_from, db)
+
+    # Derive cross rates (USD ↔ EUR)
+    aed_to_usd = base_to_currencies.get("USD", 1.0)
+    aed_to_eur = base_to_currencies.get("EUR", 1.0)
+    if aed_to_usd > 0:
+        usd_to_eur = round(aed_to_eur / aed_to_usd, 6)
+        eur_to_usd = round(1.0 / usd_to_eur, 6) if usd_to_eur > 0 else 1.0
+        _save_rate("USD", "EUR", usd_to_eur, db)
+        _save_rate("EUR", "USD", eur_to_usd, db)
+
+    db.commit()
+
+    # Recalculate all existing transactions
+    _recalc_all_tx(db)
+
+    # Return updated rates
+    updated = db.query(ExchangeRate).order_by(ExchangeRate.from_currency, ExchangeRate.to_currency).all()
+    return {
+        "ok": True,
+        "source": "live",
+        "rates": [{"from_currency": r.from_currency, "to_currency": r.to_currency, "rate": r.rate} for r in updated]
+    }
 
 
 # ─── Attachments ───
@@ -420,7 +677,8 @@ def list_recurring(db: Session = Depends(get_db), user: User = Depends(get_curre
     for r in templates:
         cat = db.query(Category).get(r.category_id)
         mem = db.query(FamilyMember).get(r.member_id)
-        result.append(RecurringTemplateOut(id=r.id, label=r.label, amount=r.amount, type=r.type,
+        result.append(RecurringTemplateOut(id=r.id, label=r.label, amount=r.amount,
+            currency=r.currency or "AED", type=r.type,
             category_id=r.category_id, category_name=cat.name if cat else "",
             member_id=r.member_id, member_name=mem.name if mem else "",
             description=r.description, tags=r.tags, day_of_month=r.day_of_month, active=r.active))
@@ -434,11 +692,12 @@ def create_recurring(r: RecurringTemplateCreate, db: Session = Depends(get_db), 
     mem = db.query(FamilyMember).get(r.member_id)
     if not mem: raise HTTPException(400, "Member not found")
     if r.day_of_month < 1 or r.day_of_month > 28: raise HTTPException(400, "Day must be 1-28")
-    db_r = RecurringTemplate(label=r.label, amount=r.amount, type=r.type,
+    db_r = RecurringTemplate(label=r.label, amount=r.amount, currency=r.currency or "AED", type=r.type,
         category_id=r.category_id, member_id=r.member_id,
         description=r.description, tags=r.tags, day_of_month=r.day_of_month)
     db.add(db_r); db.commit(); db.refresh(db_r)
     return RecurringTemplateOut(id=db_r.id, label=db_r.label, amount=db_r.amount,
+        currency=db_r.currency or "AED",
         type=db_r.type, category_id=db_r.category_id, category_name=cat.name,
         member_id=db_r.member_id, member_name=mem.name,
         description=db_r.description, tags=db_r.tags, day_of_month=db_r.day_of_month, active=db_r.active)
@@ -468,8 +727,10 @@ def process_recurring(db: Session = Depends(get_db), user: User = Depends(get_cu
             extract("year", Transaction.date) == today.year,
             extract("month", Transaction.date) == today.month).first()
         if existing: continue
-        db_t = Transaction(date=scheduled, amount=r.amount, type=r.type,
-            description=r.description or r.label, tags=r.tags,
+        currency = r.currency or "AED"
+        amount_aed = convert_to_base(r.amount, currency, db)
+        db_t = Transaction(date=scheduled, amount=r.amount, currency=currency, amount_aed=amount_aed,
+            type=r.type, description=r.description or r.label, tags=r.tags,
             category_id=r.category_id, member_id=r.member_id)
         db.add(db_t); created += 1
     if created: db.commit()
@@ -483,7 +744,7 @@ def list_budgets(year: int, month: int, db: Session = Depends(get_db), user: Use
     result = []
     for b in budgets:
         cat = db.query(Category).get(b.category_id)
-        spent = float(db.query(func.sum(Transaction.amount)).filter(
+        spent = float(db.query(func.sum(func.coalesce(Transaction.amount_aed, Transaction.amount))).filter(
             Transaction.category_id == b.category_id, Transaction.type == "expense",
             extract("year", Transaction.date) == year,
             extract("month", Transaction.date) == month).scalar() or 0)
@@ -531,7 +792,7 @@ def budget_summary(year: int, month: int, db: Session = Depends(get_db), user: U
     total_budget = 0.0; total_spent = 0.0; categories = []
     for b in budgets:
         cat = db.query(Category).get(b.category_id)
-        spent = float(db.query(func.sum(Transaction.amount)).filter(
+        spent = float(db.query(func.sum(func.coalesce(Transaction.amount_aed, Transaction.amount))).filter(
             Transaction.category_id == b.category_id, Transaction.type == "expense",
             extract("year", Transaction.date) == year,
             extract("month", Transaction.date) == month).scalar() or 0)
@@ -644,7 +905,7 @@ def metal_summary(db: Session = Depends(get_db), user: User = Depends(get_curren
 def monthly_report(year: Optional[int] = None, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     q = db.query(extract("year", Transaction.date).label("yr"),
         extract("month", Transaction.date).label("mo"),
-        Transaction.type, func.sum(Transaction.amount)).group_by("yr","mo", Transaction.type)
+        Transaction.type, func.sum(func.coalesce(Transaction.amount_aed, Transaction.amount))).group_by("yr","mo", Transaction.type)
     if year: q = q.filter(extract("year", Transaction.date) == year)
     monthly = {}
     for yr, mo, typ, total in q.all():
@@ -660,7 +921,7 @@ def monthly_report(year: Optional[int] = None, db: Session = Depends(get_db), us
 @app.get("/api/reports/category-breakdown", response_model=List[CategoryBreakdown])
 def category_breakdown(year: int, month: int, type: str = "expense",
     db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    rows = db.query(Category.name, func.sum(Transaction.amount)).join(Transaction,
+    rows = db.query(Category.name, func.sum(func.coalesce(Transaction.amount_aed, Transaction.amount))).join(Transaction,
         Transaction.category_id == Category.id).filter(
         extract("year", Transaction.date) == year,
         extract("month", Transaction.date) == month,
@@ -672,7 +933,7 @@ def category_breakdown(year: int, month: int, type: str = "expense",
 
 @app.get("/api/reports/member-breakdown", response_model=List[MemberBreakdown])
 def member_breakdown(year: int, month: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    rows = db.query(FamilyMember.name, Transaction.type, func.sum(Transaction.amount)).join(Transaction,
+    rows = db.query(FamilyMember.name, Transaction.type, func.sum(func.coalesce(Transaction.amount_aed, Transaction.amount))).join(Transaction,
         Transaction.member_id == FamilyMember.id).filter(
         extract("year", Transaction.date) == year,
         extract("month", Transaction.date) == month).group_by(FamilyMember.name, Transaction.type).all()
@@ -689,7 +950,7 @@ def member_breakdown(year: int, month: int, db: Session = Depends(get_db), user:
 def balance_over_time(months: int = 12, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     rows = db.query(extract("year", Transaction.date).label("yr"),
         extract("month", Transaction.date).label("mo"),
-        Transaction.type, func.sum(Transaction.amount)).group_by("yr","mo",Transaction.type).order_by("yr","mo").all()
+        Transaction.type, func.sum(func.coalesce(Transaction.amount_aed, Transaction.amount))).group_by("yr","mo",Transaction.type).order_by("yr","mo").all()
     running = 0.0; points = []
     for yr, mo, typ, total in rows:
         amt = float(total)
@@ -705,7 +966,7 @@ def quick_summary(year: int, month: int, db: Session = Depends(get_db), user: Us
     totals = {"income": 0, "expense": 0, "investment": 0}
     tags_set = set()
     for t in q.all():
-        totals[t.type] += t.amount
+        totals[t.type] += (t.amount_aed or t.amount)
         if t.tags:
             for tag in t.tags.split(","):
                 tag = tag.strip()
@@ -720,7 +981,7 @@ def quick_summary(year: int, month: int, db: Session = Depends(get_db), user: Us
 def net_worth_over_time(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     rows = db.query(extract("year", Transaction.date).label("yr"),
         extract("month", Transaction.date).label("mo"),
-        Transaction.type, func.sum(Transaction.amount)).group_by("yr","mo",Transaction.type).order_by("yr","mo").all()
+        Transaction.type, func.sum(func.coalesce(Transaction.amount_aed, Transaction.amount))).group_by("yr","mo",Transaction.type).order_by("yr","mo").all()
     monthly = {}
     for yr, mo, typ, total in rows:
         key = f"{int(yr)}-{int(mo):02d}"
@@ -737,7 +998,7 @@ def net_worth_over_time(db: Session = Depends(get_db), user: User = Depends(get_
 
 @app.get("/api/reports/portfolio", response_model=List[PortfolioHolding])
 def portfolio_summary(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    rows = db.query(Category.name, func.sum(Transaction.amount)).join(Transaction,
+    rows = db.query(Category.name, func.sum(func.coalesce(Transaction.amount_aed, Transaction.amount))).join(Transaction,
         Transaction.category_id == Category.id).filter(
         Transaction.type == "investment").group_by(Category.name).all()
     if not rows: return []
@@ -760,7 +1021,7 @@ def generate_pdf(year: int, db: Session = Depends(get_db), user: User = Depends(
     pdf.set_font("Helvetica", "", 14)
     pdf.cell(0, 10, f"Annual Report {year}", align="C", new_x="LMARGIN", new_y="NEXT")
     pdf.ln(10)
-    annual = db.query(Transaction.type, func.sum(Transaction.amount)).filter(
+    annual = db.query(Transaction.type, func.sum(func.coalesce(Transaction.amount_aed, Transaction.amount))).filter(
         extract("year", Transaction.date) == year).group_by(Transaction.type).all()
     totals = {"income": 0, "expense": 0, "investment": 0}
     for typ, amt in annual:
@@ -774,7 +1035,7 @@ def generate_pdf(year: int, db: Session = Depends(get_db), user: User = Depends(
         pdf.cell(90, 7, f"  {label}:"); pdf.cell(0, 7, f"${val:,.2f}", new_x="LMARGIN", new_y="NEXT")
     pdf.ln(5)
     monthly = db.query(extract("month", Transaction.date).label("mo"),
-        Transaction.type, func.sum(Transaction.amount)).filter(
+        Transaction.type, func.sum(func.coalesce(Transaction.amount_aed, Transaction.amount))).filter(
         extract("year", Transaction.date) == year).group_by("mo",Transaction.type).order_by("mo").all()
     md = {i: {"income":0.0,"expense":0.0,"investment":0.0} for i in range(1,13)}
     for mo, typ, amt in monthly:

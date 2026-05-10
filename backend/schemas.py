@@ -13,6 +13,9 @@ class LoginRequest(BaseModel):
 class TokenResponse(BaseModel):
     token: str
     username: str
+    role: str = "member"
+    member_id: Optional[int] = None
+    member_name: Optional[str] = None
 
 
 class ChangePasswordRequest(BaseModel):
@@ -23,6 +26,21 @@ class ChangePasswordRequest(BaseModel):
 class RegisterRequest(BaseModel):
     username: str
     password: str
+
+
+class UserOut(BaseModel):
+    id: int
+    username: str
+    role: str = "member"
+    member_id: Optional[int] = None
+    member_name: Optional[str] = None
+    model_config = {"from_attributes": True}
+
+
+class CreateUserRequest(BaseModel):
+    username: str
+    password: str
+    member_id: int
 
 
 # ─── Categories ───
@@ -56,6 +74,7 @@ class MemberOut(BaseModel):
 class TransactionCreate(BaseModel):
     date: str
     amount: float
+    currency: str = "AED"
     type: str
     description: Optional[str] = None
     tags: Optional[str] = None
@@ -68,6 +87,8 @@ class TransactionOut(BaseModel):
     id: int
     date: str
     amount: float
+    currency: str = "AED"
+    amount_aed: Optional[float] = None
     type: str
     description: Optional[str] = None
     tags: Optional[str] = None
@@ -85,6 +106,7 @@ class TransactionOut(BaseModel):
 class RecurringTemplateCreate(BaseModel):
     label: str
     amount: float
+    currency: str = "AED"
     type: str
     category_id: int
     member_id: int
@@ -97,6 +119,7 @@ class RecurringTemplateOut(BaseModel):
     id: int
     label: str
     amount: float
+    currency: str = "AED"
     type: str
     category_id: int
     category_name: str = ""
@@ -276,3 +299,12 @@ class PortfolioHolding(BaseModel):
     gain_loss: float = 0
     gain_loss_pct: float = 0
     allocation_pct: float = 0
+
+
+# ─── Exchange Rates ───
+
+class ExchangeRateOut(BaseModel):
+    from_currency: str
+    to_currency: str
+    rate: float
+    model_config = {"from_attributes": True}

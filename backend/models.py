@@ -9,7 +9,11 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, nullable=False, index=True)
     password_hash = Column(String, nullable=False)
+    member_id = Column(Integer, ForeignKey("family_members.id"), nullable=True)
+    role = Column(String, nullable=False, default="member")  # admin, member
     created_at = Column(DateTime, server_default=func.now())
+
+    member = relationship("FamilyMember", foreign_keys=[member_id])
 
 
 class FamilyMember(Base):
@@ -39,6 +43,7 @@ class RecurringTemplate(Base):
     id = Column(Integer, primary_key=True, index=True)
     label = Column(String, nullable=False)
     amount = Column(Float, nullable=False)
+    currency = Column(String, nullable=False, default="AED")
     type = Column(String, nullable=False)  # income, expense, investment
     category_id = Column(Integer, ForeignKey("categories.id"), nullable=False)
     member_id = Column(Integer, ForeignKey("family_members.id"), nullable=False)
@@ -64,12 +69,26 @@ class Account(Base):
     created_at = Column(DateTime, server_default=func.now())
 
 
+class ExchangeRate(Base):
+    __tablename__ = "exchange_rates"
+
+    id = Column(Integer, primary_key=True, index=True)
+    from_currency = Column(String, nullable=False)
+    to_currency = Column(String, nullable=False)
+    rate = Column(Float, nullable=False)
+    updated_at = Column(DateTime, server_default=func.now())
+
+    __table_args__ = (UniqueConstraint("from_currency", "to_currency"),)
+
+
 class Transaction(Base):
     __tablename__ = "transactions"
 
     id = Column(Integer, primary_key=True, index=True)
     date = Column(Date, nullable=False, index=True)
     amount = Column(Float, nullable=False)
+    currency = Column(String, nullable=False, default="AED")
+    amount_aed = Column(Float, nullable=True)  # converted to base currency AED
     type = Column(String, nullable=False)  # income, expense, investment
     description = Column(String, nullable=True)
     tags = Column(String, nullable=True)
